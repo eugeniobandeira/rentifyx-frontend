@@ -2,16 +2,16 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
-import { httpErrorClassifierInterceptor } from './http-error-classifier.interceptor';
+import { httpErrorInterceptor } from './http-error.interceptor';
 
-describe('httpErrorClassifierInterceptor', () => {
+describe('httpErrorInterceptor', () => {
   let http: HttpClient;
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(withInterceptors([httpErrorClassifierInterceptor])),
+        provideHttpClient(withInterceptors([httpErrorInterceptor])),
         provideHttpClientTesting(),
       ],
     });

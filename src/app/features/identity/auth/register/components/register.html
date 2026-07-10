@@ -4,6 +4,7 @@
       <div
         class="bg-success-subtle border border-success-border text-success-subtle-foreground rounded-md p-4"
         role="status"
+        data-testid="register-success-view"
       >
         <h1 class="text-lg font-semibold mb-1">Check your email</h1>
         <p class="text-sm">
@@ -24,6 +25,7 @@
           [class.border-warning-border]="isRateLimit()"
           [class.text-warning-subtle-foreground]="isRateLimit()"
           role="alert"
+          data-testid="register-error-banner"
         >
           {{ banner() }}
         </div>
@@ -33,6 +35,7 @@
         <div
           class="mb-4 rounded-md border border-error-border bg-error-subtle text-error-subtle-foreground p-3 text-sm"
           role="alert"
+          data-testid="register-summary-errors"
         >
           <ul class="list-disc list-inside">
             @for (message of summaryErrors(); track message) {
@@ -42,7 +45,13 @@
         </div>
       }
 
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4" novalidate>
+      <form
+        [formGroup]="form"
+        (ngSubmit)="onSubmit()"
+        class="space-y-4"
+        novalidate
+        data-testid="register-form"
+      >
         <div>
           <label for="email" class="block text-sm font-medium text-text-primary mb-1"
             >Email</label
@@ -53,9 +62,12 @@
             formControlName="email"
             autocomplete="email"
             class="w-full rounded-md border border-border-default bg-bg-surface text-text-primary px-3 py-2 text-sm focus:outline-none focus:border-border-focus"
+            data-testid="register-email-input"
           />
           @if (isInvalid('email')) {
-            <p class="mt-1 text-sm text-error">{{ fieldErrorMessage('email') }}</p>
+            <p class="mt-1 text-sm text-error" data-testid="register-email-error">
+              {{ fieldErrorMessage('email') }}
+            </p>
           }
         </div>
 
@@ -69,9 +81,12 @@
             formControlName="taxId"
             autocomplete="off"
             class="w-full rounded-md border border-border-default bg-bg-surface text-text-primary px-3 py-2 text-sm focus:outline-none focus:border-border-focus"
+            data-testid="register-tax-id-input"
           />
           @if (isInvalid('taxId')) {
-            <p class="mt-1 text-sm text-error">{{ fieldErrorMessage('taxId') }}</p>
+            <p class="mt-1 text-sm text-error" data-testid="register-tax-id-error">
+              {{ fieldErrorMessage('taxId') }}
+            </p>
           }
         </div>
 
@@ -85,9 +100,12 @@
             formControlName="password"
             autocomplete="new-password"
             class="w-full rounded-md border border-border-default bg-bg-surface text-text-primary px-3 py-2 text-sm focus:outline-none focus:border-border-focus"
+            data-testid="register-password-input"
           />
           @if (isInvalid('password')) {
-            <p class="mt-1 text-sm text-error">{{ fieldErrorMessage('password') }}</p>
+            <p class="mt-1 text-sm text-error" data-testid="register-password-error">
+              {{ fieldErrorMessage('password') }}
+            </p>
           } @else {
             <p class="mt-1 text-sm text-text-muted">
               12-128 characters, with uppercase, lowercase, a digit, and a symbol.
@@ -103,13 +121,16 @@
             id="role"
             formControlName="role"
             class="w-full rounded-md border border-border-default bg-bg-surface text-text-primary px-3 py-2 text-sm focus:outline-none focus:border-border-focus"
+            data-testid="register-role-select"
           >
             <option value="Owner">Owner</option>
             <option value="Renter">Renter</option>
             <option value="Admin">Admin</option>
           </select>
           @if (isInvalid('role')) {
-            <p class="mt-1 text-sm text-error">{{ fieldErrorMessage('role') }}</p>
+            <p class="mt-1 text-sm text-error" data-testid="register-role-error">
+              {{ fieldErrorMessage('role') }}
+            </p>
           }
         </div>
 
@@ -119,19 +140,23 @@
             type="checkbox"
             formControlName="consentGiven"
             class="mt-1 h-4 w-4 rounded border-border-default"
+            data-testid="register-consent-checkbox"
           />
           <label for="consentGiven" class="text-sm text-text-secondary">
             I consent to the processing of my personal data.
           </label>
         </div>
         @if (isInvalid('consentGiven')) {
-          <p class="text-sm text-error">You must agree before creating an account.</p>
+          <p class="text-sm text-error" data-testid="register-consent-error">
+            You must agree before creating an account.
+          </p>
         }
 
         <button
           type="submit"
           [disabled]="submitting()"
           class="w-full rounded-md bg-brand-default hover:bg-brand-hover active:bg-brand-active text-brand-foreground text-sm font-medium py-2.5 disabled:opacity-60"
+          data-testid="register-submit-button"
         >
           {{ submitting() ? 'Creating account…' : 'Create account' }}
         </button>

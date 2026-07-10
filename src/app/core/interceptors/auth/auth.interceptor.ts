@@ -2,9 +2,9 @@ import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/comm
 import { inject } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
-import { API_BASE_URL } from '@shared/constants/api-base-url.constant';
+import { environment } from '@app/environment/environment';
 
-const AUTH_BASE_URL = `${API_BASE_URL}/auth/`;
+const AUTH_BASE_URL = `${environment.apiUrl}/auth/`;
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const sessionService = inject(SessionService);

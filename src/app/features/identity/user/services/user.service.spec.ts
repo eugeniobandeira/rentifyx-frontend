@@ -5,7 +5,7 @@ import { UserService } from './user.service';
 import { iUserResponse } from '../interfaces/user-response';
 import { iDataExportResponse } from '../interfaces/data-export-response';
 
-const USERS_BASE_URL = '/api/v1/users';
+const USERS_BASE_URL = 'http://localhost:5000/api/v1/users';
 
 const user: iUserResponse = {
   id: 'user-1',

@@ -2,11 +2,14 @@
   <div class="w-full max-w-md rounded-lg border border-border-default bg-bg-surface p-6 sm:p-8">
     @switch (status()) {
       @case ('loading') {
-        <p class="text-center text-text-secondary">Verifying your email…</p>
+        <p class="text-center text-text-secondary" data-testid="verify-email-loading-view">
+          Verifying your email…
+        </p>
       }
       @case ('success') {
         <div
           class="rounded-md border border-success-border bg-success-subtle p-4 text-success-subtle-foreground"
+          data-testid="verify-email-success-view"
         >
           <h1 class="text-lg font-semibold">Email verified</h1>
           <p class="mt-2 text-sm">Your account has been successfully verified.</p>
@@ -14,6 +17,7 @@
         <a
           routerLink="/login"
           class="mt-6 inline-block w-full rounded-md bg-brand-default px-4 py-2 text-center text-sm font-medium text-brand-foreground hover:bg-brand-hover"
+          data-testid="verify-email-login-link"
         >
           Go to login
         </a>
@@ -21,6 +25,7 @@
       @case ('error') {
         <div
           class="rounded-md border border-error-border bg-error-subtle p-4 text-error-subtle-foreground"
+          data-testid="verify-email-error-view"
         >
           <h1 class="text-lg font-semibold">This link is no longer valid</h1>
           <p class="mt-2 text-sm">
@@ -28,7 +33,11 @@
             one or return to login.
           </p>
         </div>
-        <a routerLink="/login" class="mt-6 inline-block text-sm font-medium text-brand-default">
+        <a
+          routerLink="/login"
+          class="mt-6 inline-block text-sm font-medium text-brand-default"
+          data-testid="verify-email-login-link"
+        >
           Back to login
         </a>
       }

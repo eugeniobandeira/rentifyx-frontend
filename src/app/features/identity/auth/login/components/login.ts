@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
+import { createLoginFormControl, LoginFormGroup } from '../constants/login-form.config';
 
 @Component({
   selector: 'app-login',
@@ -12,15 +13,11 @@ import { SessionService } from '@features/identity/auth/session/services/session
   templateUrl: './login.html',
 })
 export class LoginPage {
-  private readonly _formBuilder = inject(FormBuilder);
   private readonly _sessionService = inject(SessionService);
   private readonly _router = inject(Router);
   private readonly _route = inject(ActivatedRoute);
 
-  readonly form = this._formBuilder.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required]],
-  });
+  readonly form: LoginFormGroup = createLoginFormControl();
 
   readonly banner = signal<string | null>(null);
   readonly submitting = signal(false);

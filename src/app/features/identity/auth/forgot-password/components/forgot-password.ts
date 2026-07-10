@@ -1,8 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { ForgotPasswordService } from '../services/forgot-password.service';
 import { iForgotPasswordRequest } from '../interfaces/forgot-password-request';
 import { FORM_FIELD_NAMES } from '../constants/forgot-password.constants';
+import {
+  createForgotPasswordFormControl,
+  ForgotPasswordFormGroup,
+} from '../constants/forgot-password-form.config';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 
 @Component({
@@ -13,7 +17,6 @@ import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
   templateUrl: './forgot-password.html',
 })
 export class ForgotPasswordPage {
-  private readonly _fb = inject(FormBuilder);
   private readonly _forgotPasswordService = inject(ForgotPasswordService);
 
   readonly viewState = signal<'form' | 'success'>('form');
@@ -21,9 +24,7 @@ export class ForgotPasswordPage {
   readonly banner = signal<string | null>(null);
   readonly isRateLimit = signal(false);
 
-  readonly form = this._fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(320)]],
-  });
+  readonly form: ForgotPasswordFormGroup = createForgotPasswordFormControl();
 
   isInvalid(controlName: (typeof FORM_FIELD_NAMES)[number]): boolean {
     const control = this.form.get(controlName);

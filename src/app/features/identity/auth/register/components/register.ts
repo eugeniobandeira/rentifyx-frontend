@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { RegisterService } from '../services/register.service';
 import { iRegisterRequest } from '../interfaces/register-request';
-import { PASSWORD_PATTERN, FORM_FIELD_NAMES } from '../constants/register.constants';
+import { FORM_FIELD_NAMES } from '../constants/register.constants';
+import { createRegisterFormControl, RegisterFormGroup } from '../constants/register-form.config';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 
 @Component({
@@ -13,7 +14,6 @@ import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
   templateUrl: './register.html',
 })
 export class RegisterPage {
-  private readonly _fb = inject(FormBuilder);
   private readonly _registerService = inject(RegisterService);
 
   readonly viewState = signal<'form' | 'success'>('form');
@@ -22,16 +22,7 @@ export class RegisterPage {
   readonly isRateLimit = signal(false);
   readonly summaryErrors = signal<string[]>([]);
 
-  readonly form = this._fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(320)]],
-    taxId: ['', [Validators.required]],
-    password: [
-      '',
-      [Validators.required, Validators.minLength(12), Validators.maxLength(128), Validators.pattern(PASSWORD_PATTERN)],
-    ],
-    role: ['Renter' as 'Owner' | 'Renter' | 'Admin', [Validators.required]],
-    consentGiven: [false, [Validators.requiredTrue]],
-  });
+  readonly form: RegisterFormGroup = createRegisterFormControl();
 
   isInvalid(controlName: (typeof FORM_FIELD_NAMES)[number]): boolean {
     const control = this.form.get(controlName);

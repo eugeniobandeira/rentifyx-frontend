@@ -1,9 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { ResetPasswordService } from '../services/reset-password.service';
 import { iResetPasswordRequest } from '../interfaces/reset-password-request';
-import { PASSWORD_PATTERN } from '../constants/reset-password.constants';
+import {
+  createResetPasswordFormControl,
+  ResetPasswordFormGroup,
+} from '../constants/reset-password-form.config';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 
 type ResetPasswordViewState = 'form' | 'success' | 'invalid-link';
@@ -16,7 +19,6 @@ type ResetPasswordViewState = 'form' | 'success' | 'invalid-link';
   templateUrl: './reset-password.html',
 })
 export class ResetPasswordPage {
-  private readonly _fb = inject(FormBuilder);
   private readonly _resetPasswordService = inject(ResetPasswordService);
   private readonly _route = inject(ActivatedRoute);
 
@@ -28,17 +30,7 @@ export class ResetPasswordPage {
   readonly banner = signal<string | null>(null);
   readonly isRateLimit = signal(false);
 
-  readonly form = this._fb.nonNullable.group({
-    newPassword: [
-      '',
-      [
-        Validators.required,
-        Validators.minLength(12),
-        Validators.maxLength(128),
-        Validators.pattern(PASSWORD_PATTERN),
-      ],
-    ],
-  });
+  readonly form: ResetPasswordFormGroup = createResetPasswordFormControl();
 
   constructor() {
     const email = this._route.snapshot.queryParamMap.get('email');

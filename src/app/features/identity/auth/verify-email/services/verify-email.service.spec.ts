@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { VerifyEmailService } from './verify-email.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
 
-const AUTH_BASE_URL = '/api/v1/auth';
+const AUTH_BASE_URL = 'http://localhost:5000/api/v1/auth';
 
 const user: iUserResponse = {
   id: 'user-1',

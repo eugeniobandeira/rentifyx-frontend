@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ResetPasswordService } from './reset-password.service';
 
-const AUTH_BASE_URL = '/api/v1/auth';
+const AUTH_BASE_URL = 'http://localhost:5000/api/v1/auth';
 
 describe('ResetPasswordService', () => {
   let service: ResetPasswordService;

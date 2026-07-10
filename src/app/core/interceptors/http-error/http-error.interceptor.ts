@@ -18,7 +18,7 @@ const STATUS_KIND_MAP: Record<number, HttpErrorKind> = {
   429: 'rate-limit',
 };
 
-export const httpErrorClassifierInterceptor: HttpInterceptorFn = (req, next) =>
+export const httpErrorInterceptor: HttpInterceptorFn = (req, next) =>
   next(req).pipe(
     catchError((error: unknown) => {
       if (!(error instanceof HttpErrorResponse)) {

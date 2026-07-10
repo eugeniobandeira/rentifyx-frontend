@@ -1,5 +1,5 @@
-export type UserRole = 'Owner' | 'Renter' | 'Admin';
-export type UserStatus = 'PendingVerification' | 'Active' | 'Deleted';
+import { UserRole } from '../types/user-role';
+import { UserStatus } from '../types/user-status';
 
 export interface iUserResponse {
   id: string;

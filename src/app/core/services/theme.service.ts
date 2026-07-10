@@ -1,6 +1,6 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
-import { ColorSchemeMode } from '@core/interfaces/color-scheme-mode';
+import { ColorSchemeMode } from '@core/types/color-scheme-mode';
 
 const STORAGE_KEY = 'rentityx-color-scheme';
 

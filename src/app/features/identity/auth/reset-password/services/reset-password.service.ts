@@ -1,16 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { API_BASE_URL } from '@shared/constants/api-base-url.constant';
+import { environment } from '@app/environment/environment';
 import { iResetPasswordRequest } from '../interfaces/reset-password-request';
-
-const RESET_PASSWORD_URL = `${API_BASE_URL}/auth/reset-password`;
 
 @Injectable({ providedIn: 'root' })
 export class ResetPasswordService {
   private readonly _http = inject(HttpClient);
+  private readonly _API_URL = `${environment.apiUrl}/auth/reset-password`;
 
   resetPassword(request: iResetPasswordRequest): Observable<void> {
-    return this._http.post<void>(RESET_PASSWORD_URL, request, { withCredentials: true });
+    return this._http.post<void>(this._API_URL, request, { withCredentials: true });
   }
 }

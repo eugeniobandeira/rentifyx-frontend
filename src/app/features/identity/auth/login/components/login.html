@@ -11,12 +11,19 @@
             : 'bg-error-subtle text-error-subtle-foreground border-error-border'
         "
         role="alert"
+        data-testid="login-error-banner"
       >
         {{ banner() }}
       </div>
     }
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4" novalidate>
+    <form
+      [formGroup]="form"
+      (ngSubmit)="onSubmit()"
+      class="flex flex-col gap-4"
+      novalidate
+      data-testid="login-form"
+    >
       <div class="flex flex-col gap-1">
         <label for="email" class="text-sm font-medium text-text-primary">Email</label>
         <input
@@ -25,6 +32,7 @@
           formControlName="email"
           autocomplete="email"
           class="rounded-md border border-border-default bg-bg-surface px-3 py-2 text-text-primary focus:border-border-focus focus:outline-none"
+          data-testid="login-email-input"
         />
       </div>
 
@@ -36,6 +44,7 @@
           formControlName="password"
           autocomplete="current-password"
           class="rounded-md border border-border-default bg-bg-surface px-3 py-2 text-text-primary focus:border-border-focus focus:outline-none"
+          data-testid="login-password-input"
         />
       </div>
 
@@ -43,13 +52,17 @@
         type="submit"
         [disabled]="submitting()"
         class="mt-2 rounded-md bg-brand-default px-4 py-2 font-medium text-brand-foreground hover:bg-brand-hover active:bg-brand-active disabled:cursor-not-allowed disabled:opacity-60"
+        data-testid="login-submit-button"
       >
         Sign in
       </button>
     </form>
 
     <p class="mt-4 text-sm text-text-secondary">
-      Don't have an account? <a routerLink="/register" class="text-brand-default hover:underline">Register</a>
+      Don't have an account?
+      <a routerLink="/register" class="text-brand-default hover:underline" data-testid="login-register-link"
+        >Register</a
+      >
     </p>
   </div>
 </section>

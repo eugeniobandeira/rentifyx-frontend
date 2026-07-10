@@ -1,6 +1,6 @@
-<main class="app-shell">
+<main class="app-shell" data-testid="app-shell">
   @if (isRestoringSession()) {
-    <div class="flex min-h-screen items-center justify-center bg-bg-canvas">
+    <div class="flex min-h-screen items-center justify-center bg-bg-canvas" data-testid="app-restoring-session">
       <p class="text-sm text-text-secondary">Restoring session…</p>
     </div>
   } @else {
