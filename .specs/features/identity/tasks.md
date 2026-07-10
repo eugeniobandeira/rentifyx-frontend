@@ -1,7 +1,7 @@
 # Identity Tasks
 
 **Design**: `.specs/features/identity/design.md`
-**Status**: Draft
+**Status**: T1–T21 implemented (see `.specs/project/STATE.md`). New migration section added 2026-07-11 below for the httpOnly refresh-cookie contract revision — not yet executed.
 
 ---
 
@@ -666,5 +666,144 @@ No violations. No task defers its own tests to a later task.
 
 ## Before Execute: open items to resolve first
 
-1. **T6 is blocked on the token-storage decision** (`context.md`) — re-ask the user (memory+localStorage / localStorage-only / sessionStorage-only) before implementing the concrete storage calls. Every other task can still proceed in the meantime since they depend only on `TokenStorageService`'s fixed interface.
+1. ~~T6 was blocked on the token-storage decision~~ — **resolved** by the 2026-07-11 `api-contracts.md` revision (see Migration section below). No longer applicable.
 2. **Tools per task**: this plan assumes no MCP/skill beyond the standard file/test tools already used to build it (no Context7 lookups were needed — Angular 22 standalone/signals/HttpInterceptorFn APIs were already confirmed against this codebase's existing `ThemeService`/`app.config.ts` patterns, not fabricated). Confirm before Execute whether any additional MCP (e.g. Context7 for a specific Angular API check) should be used per task, per the skill's standard pre-execute question.
+
+---
+
+# Migration: httpOnly Refresh-Token Cookie (2026-07-11)
+
+**Trigger**: `api-contracts.md` was revised — `refreshToken` is no longer returned in any JSON response body; it's now set by the server as an `httpOnly`/`Secure`/`SameSite=Strict` cookie (`Path=/api/v1/auth`), invisible to JavaScript. `POST /auth/refresh`/`POST /auth/logout` request bodies drop `refreshToken` (now just `{ email }`); `POST /auth/refresh` now fails with `422` instead of `401`. Frontend requests to `/api/v1/auth/*` must be made with `withCredentials: true`. Full diff analysis in `context.md` → "Resolved Decisions (2026-07-11 revision)" and `design.md` (updated throughout).
+
+**Scope**: T1–T21's implementation predates this contract revision. This migration touches only the files that reference the old `refreshToken`-in-body shape — confirmed via `grep -r "refreshToken|LoginResponse|setSession" src/app` against the current codebase: 8 files. `authGuard`, `authInterceptor`, `UserService`, and all 6 page components (`RegisterPage`, `LoginPage`, `VerifyEmailPage`, `ForgotPasswordPage`, `ResetPasswordPage`, `AccountPage`) do **not** reference these shapes directly and are unaffected — do not touch them.
+
+**Requirement**: IDENT-03, IDENT-04 (see `spec.md`'s revised acceptance criteria — status changed to "Needs rework")
+
+```
+M1 [P] ─┐
+M2 [P] ─┼──→ M3 ──→ M4
+```
+
+---
+
+### M1: Update Auth DTOs + `AuthService` for the cookie-based contract [P]
+
+**What**:
+- `iRefreshRequest` (`refresh-request.ts`) and `iLogoutRequest` (`logout-request.ts`) drop the `refreshToken` field — both become `{ email: string }` only.
+- Rename `login-response.ts` → `auth-token-response.ts`; rename `iLoginResponse` → `iAuthTokenResponse` (matches `api-contracts.md`'s "Shared Types" naming); drop its `refreshToken` field — becomes `{ accessToken: string; user: iUserResponse }`.
+- `AuthService.login`/`refresh`/`logout` return `Observable<iAuthTokenResponse>` (login/refresh) — update the type import. All 7 `AuthService` methods pass `{ withCredentials: true }` as `HttpClient`'s options argument (per `api-contracts.md`: "every request to `/api/v1/auth/*` must be made with `credentials: 'include'`" — not just login/refresh/logout).
+
+**Where**:
+- `src/app/features/identity/auth/interfaces/refresh-request.ts` (modify)
+- `src/app/features/identity/auth/interfaces/logout-request.ts` (modify)
+- `src/app/features/identity/auth/interfaces/login-response.ts` → delete, replaced by `src/app/features/identity/auth/interfaces/auth-token-response.ts` (new)
+- `src/app/features/identity/auth/services/auth.service.ts` (modify)
+- `src/app/features/identity/auth/services/auth.service.spec.ts` (modify — update mock response shapes, assert `withCredentials: true` on all 7 requests via `HttpTestingController`'s captured request)
+
+**Depends on**: None
+**Reuses**: existing `iUserResponse` import, existing `AUTH_BASE_URL` constant, existing test structure in `auth.service.spec.ts`
+**Requirement**: IDENT-03, IDENT-04
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `iRefreshRequest`/`iLogoutRequest` have exactly `{ email: string }`, no `refreshToken` field anywhere
+- [ ] `iAuthTokenResponse` exists at `auth-token-response.ts` with `{ accessToken, user }`; `login-response.ts`/`iLoginResponse` no longer exist anywhere in the codebase
+- [ ] All 7 `AuthService` methods' `HttpClient` calls pass `{ withCredentials: true }`
+- [ ] `ng test --include='**/auth.service.spec.ts'` passes, including new assertions that `req.request.withCredentials` is `true` for all 7 requests
+- [ ] Test count: still ≥7 (one per method), each now also asserting `withCredentials`
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/auth.service.spec.ts'`
+
+---
+
+### M2: Update `TokenStorageService` for memory-only accessToken + persisted email [P]
+
+**What**: Remove all refresh-token storage (nothing left to store — the cookie owns it). Keep `accessToken` in memory only (unchanged from before). Add persistence of `email` to `localStorage` (browser-only, `PLATFORM_ID`-guarded like `ThemeService`), since `bootstrap()` needs it to call `POST /auth/refresh` after a reload (see `context.md`).
+
+**Where**:
+- `src/app/core/services/token-storage.service.ts` (modify)
+- `src/app/core/services/token-storage.service.spec.ts` (modify — drop refresh-token assertions, add `localStorage` persistence assertions, add an SSR/`PLATFORM_ID`-guard test matching `ThemeService.spec.ts`'s pattern)
+
+**Depends on**: None
+**Reuses**: `ThemeService`'s `PLATFORM_ID`/`isPlatformBrowser` + `localStorage` guard pattern (`src/app/core/services/theme.service.ts`) — this is the first *other* service in the codebase to touch `localStorage`, follow that established precedent exactly (same guard shape, same `DOCUMENT`-via-`defaultView` access style if consistent, or plain `isPlatformBrowser(inject(PLATFORM_ID))` + global `localStorage` — match whichever `ThemeService` actually does)
+**Requirement**: IDENT-03, IDENT-04
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `getRefreshToken()` and any refresh-token storage field are removed entirely
+- [ ] `getAccessToken()` remains in-memory only (unchanged behavior)
+- [ ] `getEmail()` reads from `localStorage`; returns `null` when nothing stored or `!isPlatformBrowser`
+- [ ] `setSession(accessToken: string, email: string): void` — note the signature drops the `refreshToken` parameter — persists `accessToken` in memory and `email` to `localStorage`
+- [ ] `clear()` clears both the in-memory `accessToken` and the persisted `email` (removes the `localStorage` key)
+- [ ] No `localStorage` API is touched when `!isPlatformBrowser(platformId)`
+- [ ] `ng test --include='**/token-storage.service.spec.ts'` passes
+- [ ] Test count: at least 5 (set+get roundtrip for both accessToken and email, clear removes both, missing values return null, SSR no-op doesn't touch `localStorage`)
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/token-storage.service.spec.ts'`
+
+---
+
+### M3: Update `SessionService` — bootstrap on persisted email, drop refresh-token plumbing
+
+**What**: Rewrite `bootstrap()` to gate on `TokenStorageService.getEmail()` (not a refresh token, which is no longer observable) — if an email is persisted, unconditionally call `refresh()` to attempt restoration via the `httpOnly` cookie; `200` restores the session, `422` clears it. Add a new `isRestoringSession: Signal<boolean>`, `true` only while this specific bootstrap-triggered refresh call is in flight (stays `false` — no flash — for anonymous visitors with no persisted email, since no API call happens for them). Update `login()`/`logout()`/`refresh()` to use `AuthService`'s new signatures (`{ email }` only) and `iAuthTokenResponse`. `clearSession()` now clears the persisted email too (via `TokenStorageService.clear()`, already handled if M2 lands first).
+
+**Where**:
+- `src/app/core/services/session.service.ts` (modify)
+- `src/app/core/services/session.service.spec.ts` (modify — update all mock `AuthService`/`TokenStorageService` shapes; rewrite the two `bootstrap()` tests since the gating condition changed from "refresh token present" to "email present"; add a new test for `isRestoringSession` toggling true→false around the bootstrap refresh call; update the "failed refresh clears session" test to reflect a `422` response instead of a generic error, if the existing test's mock status mattered)
+
+**Depends on**: M1 (needs `iAuthTokenResponse`/updated `AuthService` signatures), M2 (needs `TokenStorageService.getEmail()`/new `setSession` signature)
+**Reuses**: existing `decodeJwtExpiry`-based proactive-refresh-timer logic (unchanged), existing dedup-via-`shareReplay` pattern (unchanged)
+**Requirement**: IDENT-03, IDENT-04
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `bootstrap()` calls `TokenStorageService.getEmail()`; if `null`, stays logged out with **no** API call and `isRestoringSession` stays `false`
+- [ ] `bootstrap()` with a persisted email sets `isRestoringSession(true)`, calls `refresh()`, and sets `isRestoringSession(false)` when that call settles (success or failure) — verify via a test that reads the signal mid-flight (e.g. a `Subject`-backed mock, matching the existing dedup test's pattern)
+- [ ] `login()`/`refresh()` no longer read/write a refresh token anywhere; `logout()`/`refresh()` call `AuthService` with `{ email }` only
+- [ ] A `422` (or any error) from `refresh()` clears the session, including the persisted email (`TokenStorageService.clear()`)
+- [ ] `ng test --include='**/session.service.spec.ts'` passes
+- [ ] Test count: at least 9 (existing 9, with the two bootstrap tests rewritten for the new gating condition, plus 1 new `isRestoringSession` test — net same-or-higher count, none silently dropped)
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/session.service.spec.ts'`
+
+---
+
+### M4: Wire `isRestoringSession` into the app shell's loading state
+
+**What**: `App`'s template shows a minimal "Restoring session…" state while `SessionService.isRestoringSession()` is `true`, instead of rendering `<router-outlet />` — avoids a logged-out→logged-in flash for returning users on reload (anonymous first-time visitors never see this, since `isRestoringSession` never flips `true` for them per M3).
+
+**Where**:
+- `src/app/app.html` (modify — `@if (isRestoringSession()) { ... } @else { <router-outlet /> }`)
+- `src/app/app.ts` (modify — expose `isRestoringSession` from the injected `SessionService` as a protected/public signal for the template to read)
+- `src/app/app.spec.ts` (modify only if the existing "should create the app"/"should render title" tests need a `SessionService` mock to control `isRestoringSession` deterministically in tests — check whether the real `SessionService` with a real in-memory `TokenStorageService` already defaults `isRestoringSession` to `false` with no persisted email, which it should, making a mock likely unnecessary; only add one if the real dependency chain causes flakiness)
+
+**Depends on**: M3
+**Reuses**: existing minimal `app.html` structure, Tailwind semantic tokens (`bg-bg-canvas`, `text-text-secondary`) for the loading state markup, matching the style already used in `VerifyEmailPage`'s `loading` case
+
+**Requirement**: IDENT-03
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `isRestoringSession() === true` renders the loading state, not `<router-outlet />`
+- [ ] `isRestoringSession() === false` (the default/common case) renders `<router-outlet />` exactly as before — no regression for anonymous visitors or any existing page
+- [ ] `npm test` (full suite) passes — **including the pre-existing `app.spec.ts` "should render title" failure remaining exactly as-is** (do not attempt to fix it as part of this task — out of scope, already tracked in `STATE.md` as a known, unrelated issue)
+- [ ] `npm run build` succeeds (client + server bundles)
+- [ ] Manual smoke check (see note below): log in, reload the tab, confirm the protected `/account` route is still reachable without a login prompt and without a visible flash
+
+**Tests**: none (template/wiring — verified by the full-suite + build gate, consistent with how `app.config.ts`/`app.routes.ts` wiring tasks were gated in the original T12/T16/T20)
+**Gate**: full — `npm test && npm run build`
+
+**Commit**: `fix(identity): migrate to httpOnly refresh-token cookie contract`
+
+---
+
+## Migration Test Coverage Note
+
+Since this backend now sets real cookies, the **manual smoke check** for M4 requires a running backend that actually implements the revised contract (issues the `Set-Cookie` header, honors `withCredentials`, enforces `SameSite=Strict`/CORS with the exact frontend origin). Automated unit tests mock `AuthService`/`HttpClient` and don't exercise real cookie behavior — a manual/E2E check against a real backend is the only way to catch a CORS or cookie-attribute misconfiguration (e.g. frontend origin not matching `Cors:AllowedOrigins` exactly, which would silently drop the cookie). Flag this explicitly since automated coverage cannot fully verify this migration's core premise.

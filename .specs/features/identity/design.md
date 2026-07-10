@@ -2,7 +2,7 @@
 
 **Spec**: `.specs/features/identity/spec.md`
 **Context**: `.specs/features/identity/context.md`
-**Status**: Draft
+**Status**: Revised 2026-07-11 — `api-contracts.md` changed to httpOnly refresh-token cookies (was: refresh token returned in the JSON body). This revision updates the architecture below; the original T1–T21 implementation predates it. See `.specs/features/identity/tasks.md` → "Migration: httpOnly Refresh-Token Cookie" for the concrete task breakdown bringing the code in line with this revision.
 
 ---
 
@@ -11,7 +11,7 @@
 Three layers, split across `core/` (cross-cutting session/route infra, per `CLAUDE.md`) and `features/identity/` (domain services + DTOs matching `api-contracts.md`):
 
 1. **HTTP layer** (`features/identity/auth`, `features/identity/user`) — thin, stateless services that call the 9 endpoints in `api-contracts.md` and return typed Observables. No token/session logic lives here.
-2. **Session layer** (`core/services`) — `SessionService` owns the current tokens + current user as signals, orchestrates login/logout/refresh, and schedules the proactive refresh timer. `TokenStorageService` isolates the still-open storage-mechanism decision (`context.md`) behind `get/set/clear`.
+2. **Session layer** (`core/services`) — `SessionService` owns the current `accessToken` + current user as signals, orchestrates login/logout/refresh, and schedules the proactive refresh timer. `TokenStorageService` holds the `accessToken` in memory only and persists just the user's `email` in `localStorage` (non-sensitive, needed so `bootstrap()` knows who to ask `POST /auth/refresh` for after a reload — see `context.md` → "Email persistence for bootstrap"). The refresh token itself is never touched by frontend code at all — it lives in an `httpOnly` cookie the browser manages automatically.
 3. **App-shell integration** (`core/guards`, `core/interceptors`, `core/pages`) — `authGuard` protects routes, `authInterceptor` attaches the bearer token and handles reactive refresh-on-401, and the public/authenticated pages consume `SessionService` + the HTTP-layer services.
 
 ```mermaid
@@ -23,8 +23,8 @@ graph TD
         UserSvc["UserService<br/>getMe, deleteMe, exportMyData"]
     end
     subgraph "core/services"
-        SessionSvc["SessionService<br/>accessToken/refreshToken/currentUser signals<br/>login(), logout(), bootstrap(), scheduleRefresh()"]
-        TokenStore["TokenStorageService<br/>get/set/clear(access, refresh)<br/>[storage mechanism: OPEN DECISION]"]
+        SessionSvc["SessionService<br/>accessToken/currentUser signals<br/>login(), logout(), bootstrap(), scheduleRefresh()"]
+        TokenStore["TokenStorageService<br/>accessToken: memory only<br/>email: localStorage (bootstrap continuity)<br/>refreshToken: never touched — httpOnly cookie"]
     end
     subgraph "core (app shell)"
         Guard["authGuard<br/>CanActivateFn"]
@@ -43,7 +43,7 @@ graph TD
     Interceptor -->|attaches Bearer token to| AuthSvc
 ```
 
-### Token refresh sequence (proactive + reactive, per `context.md`)
+### Token refresh sequence (proactive + reactive, per `context.md` — revised for the httpOnly cookie flow)
 
 ```mermaid
 sequenceDiagram
@@ -52,34 +52,40 @@ sequenceDiagram
     participant Store as TokenStorageService
     participant API as Identity API
     participant Interceptor as authInterceptor
+    participant Cookie as Browser cookie jar (httpOnly, automatic)
 
-    App->>Session: bootstrap() (app init, browser only)
-    Session->>Store: get persisted refreshToken
-    alt refresh token present
-        Session->>API: POST /auth/refresh
-        API-->>Session: 200 LoginResponse (new tokens)
-        Session->>Store: persist new tokens
-        Session->>Session: decode exp, scheduleRefresh(exp - 60s)
-    else no refresh token
-        Session->>Session: stay logged out
+    App->>Session: bootstrap() (app init, browser only) — show "restoring session" UI
+    Session->>Store: get persisted email (localStorage)
+    alt email present
+        Session->>API: POST /auth/refresh { email } (withCredentials: true)
+        Note over Cookie,API: browser attaches httpOnly refreshToken cookie automatically
+        alt 200 AuthTokenResponse
+            API-->>Session: { accessToken, user }
+            Session->>Store: keep accessToken in memory, re-persist email
+            Session->>Session: decode exp, scheduleRefresh(exp - 60s)
+        else 422 (cookie missing/invalid/expired)
+            Session->>Session: clear session + clear persisted email
+        end
+    else no persisted email
+        Session->>Session: stay logged out (no API call)
     end
 
     Note over Session: later, timer fires ~60s before exp
-    Session->>API: POST /auth/refresh
-    API-->>Session: 200 LoginResponse
-    Session->>Store: persist new tokens
+    Session->>API: POST /auth/refresh { email } (withCredentials: true)
+    API-->>Session: 200 AuthTokenResponse
+    Session->>Store: keep new accessToken in memory
     Session->>Session: reschedule timer
 
-    Note over Interceptor: fallback path, any authenticated request
+    Note over Interceptor: fallback path, any authenticated request (not /auth/*)
     Interceptor->>API: request with expired access token
     API-->>Interceptor: 401
     Interceptor->>Session: refresh() (single in-flight, deduped)
-    Session->>API: POST /auth/refresh
+    Session->>API: POST /auth/refresh { email } (withCredentials: true)
     alt refresh succeeds
-        API-->>Session: 200 LoginResponse
+        API-->>Session: 200 AuthTokenResponse
         Interceptor->>API: retry original request with new token
-    else refresh fails (401)
-        Session->>Session: clear session
+    else refresh fails (422)
+        Session->>Session: clear session + clear persisted email
         Interceptor->>App: redirect to /login
     end
 ```
@@ -115,16 +121,17 @@ sequenceDiagram
 
 - **Purpose**: Stateless HTTP wrapper for the 7 `/auth/*` endpoints.
 - **Location**: `src/app/features/identity/auth/services/auth.service.ts`
-- **Interfaces**:
+- **Interfaces** (revised 2026-07-11 — `refresh`/`logout` request bodies drop `refreshToken`; `login`/`refresh` return `AuthTokenResponse`, not `LoginResponse`):
   - `register(request: RegisterRequest): Observable<UserResponse>` — `POST /auth/register`
-  - `login(request: LoginRequest): Observable<LoginResponse>` — `POST /auth/login`
-  - `refresh(request: RefreshRequest): Observable<LoginResponse>` — `POST /auth/refresh`
-  - `logout(request: LogoutRequest): Observable<void>` — `POST /auth/logout`
+  - `login(request: LoginRequest): Observable<AuthTokenResponse>` — `POST /auth/login`, **`{ withCredentials: true }`** (server sets the `refreshToken` cookie on this response)
+  - `refresh(request: RefreshRequest): Observable<AuthTokenResponse>` — `POST /auth/refresh`, **`{ withCredentials: true }`** (`RefreshRequest` is now just `{ email }` — the refresh token travels via the cookie, never the body)
+  - `logout(request: LogoutRequest): Observable<void>` — `POST /auth/logout`, **`{ withCredentials: true }`** (`LogoutRequest` is now just `{ email }`; the server clears the cookie)
   - `verifyEmail(request: VerifyEmailRequest): Observable<UserResponse>` — `POST /auth/verify-email`
   - `forgotPassword(request: ForgotPasswordRequest): Observable<void>` — `POST /auth/forgot-password`
   - `resetPassword(request: ResetPasswordRequest): Observable<void>` — `POST /auth/reset-password`
 - **Dependencies**: `HttpClient`
 - **Reuses**: nothing yet — first HTTP service in the app; sets the pattern future feature services will follow (no `BaseHttpService` abstraction yet — see Tech Decisions)
+- **Note**: `api-contracts.md`'s "Frontend requirement" says *every* request to `/api/v1/auth/*` must be made with credentials included, not just login/refresh/logout — the other four methods (`register`, `verifyEmail`, `forgotPassword`, `resetPassword`) don't currently read/write the cookie, but pass `{ withCredentials: true }` on all 7 for contract compliance and consistency rather than special-casing three of them.
 
 ### `UserService`
 
@@ -139,30 +146,31 @@ sequenceDiagram
 
 ### `TokenStorageService`
 
-- **Purpose**: Sole point of contact with the browser storage mechanism for tokens — isolates the open decision in `context.md` so it's a one-file change later.
+- **Purpose**: Sole point of contact with client-side storage for session identity. Holds `accessToken` in memory only (never persisted — mandated by `api-contracts.md`). Persists only the user's `email` in `localStorage`, purely so `bootstrap()` knows which account to call `POST /auth/refresh` for after a reload (see `context.md` → "Email persistence for bootstrap"). The refresh token itself is never stored, read, or touched here at all — the browser's cookie jar owns it entirely, invisibly to this service.
 - **Location**: `src/app/core/services/token-storage.service.ts`
-- **Interfaces**:
-  - `getAccessToken(): string | null`
-  - `getRefreshToken(): string | null`
-  - `setTokens(accessToken: string, refreshToken: string): void`
-  - `clear(): void`
-- **Dependencies**: `PLATFORM_ID` (no-op on server)
-- **Reuses**: `ThemeService`'s SSR-guard pattern
-- **Note**: initial implementation placeholder only persists via a mechanism to be confirmed (see Tech Decisions) — every call site depends on this interface, not the mechanism, so the pending decision cannot leak into guards/interceptors/pages.
+- **Interfaces** (revised 2026-07-11 — drops all refresh-token storage; adds persisted email):
+  - `getAccessToken(): string | null` (in-memory)
+  - `getEmail(): string | null` (reads `localStorage`, browser-only)
+  - `setSession(accessToken: string, email: string): void` (accessToken in memory; email written to `localStorage`)
+  - `clear(): void` (clears both)
+- **Dependencies**: `PLATFORM_ID` (no-op on server for the `localStorage` calls)
+- **Reuses**: `ThemeService`'s SSR-guard pattern (`localStorage` access needs the same `isPlatformBrowser` guard `ThemeService` already uses)
+- **Note**: this is no longer a "placeholder pending a decision" — the shape above is the final, contract-mandated implementation. The only thing that was ever genuinely undecided (memory vs. `localStorage` vs. `sessionStorage` for the access+refresh tokens) was resolved by the backend, not by an internal product choice.
 
 ### `SessionService`
 
 - **Purpose**: Single source of truth for "am I logged in, as whom, with what token" — orchestrates `AuthService` calls, `TokenStorageService` persistence, and the proactive refresh timer.
 - **Location**: `src/app/core/services/session.service.ts`
-- **Interfaces**:
+- **Interfaces** (revised 2026-07-11 — `bootstrap()` semantics change: no more "is there a stored refresh token" gate, since that's now invisible to JS; gated on persisted `email` instead):
   - `currentUser: Signal<UserResponse | null>`
   - `isAuthenticated: Signal<boolean>` (computed from `currentUser`)
+  - `isRestoringSession: Signal<boolean>` (**new** — `true` while `bootstrap()`'s `/auth/refresh` call is in flight, so `App` can show a loading state instead of flashing logged-out→logged-in on every reload; see `context.md`)
   - `accessToken(): string | null` (read for the interceptor; not a signal, read synchronously per-request)
-  - `bootstrap(): void` — called once at app start; if a refresh token is persisted, silently refreshes to restore the session, else stays logged out. Browser-only (no-op on server).
-  - `login(request: LoginRequest): Observable<UserResponse>` — calls `AuthService.login`, persists tokens, sets `currentUser`, schedules refresh
-  - `logout(): Observable<void>` — calls `AuthService.logout` with current email/refreshToken, then clears state regardless of response (endpoint is idempotent per contract)
-  - `refresh(): Observable<UserResponse>` — used by both the proactive timer and the reactive interceptor fallback; **deduplicated** (concurrent callers share one in-flight refresh instead of firing N parallel `/auth/refresh` calls)
-  - `clearSession(): void` — internal, used by `logout()` and by refresh-failure paths
+  - `bootstrap(): void` — called once at app start; if an `email` is persisted, unconditionally calls `refresh()` to attempt session restoration via the `httpOnly` cookie (`200` restores, `422` clears and stays logged out); if no `email` is persisted, stays logged out without an API call. Browser-only (no-op on server).
+  - `login(request: LoginRequest): Observable<UserResponse>` — calls `AuthService.login` with `withCredentials: true`, stores `accessToken` in memory + `email` in `localStorage`, sets `currentUser`, schedules refresh
+  - `logout(): Observable<void>` — calls `AuthService.logout` with current `email` and `withCredentials: true`, then clears state (including persisted email) regardless of response (endpoint is idempotent per contract)
+  - `refresh(): Observable<UserResponse>` — used by `bootstrap()`, the proactive timer, and the reactive interceptor fallback; **deduplicated** (concurrent callers share one in-flight refresh instead of firing N parallel `/auth/refresh` calls); a `422` clears the session (including persisted email)
+  - `clearSession(): void` — internal, used by `logout()` and by refresh-failure paths; clears `TokenStorageService` entirely (accessToken + persisted email)
 - **Dependencies**: `AuthService`, `TokenStorageService`, `Router` (for logout/refresh-failure redirects), `PLATFORM_ID`
 - **Reuses**: `ThemeService`'s signal + SSR-guard structure as the established precedent for `core/services`
 
@@ -183,6 +191,8 @@ sequenceDiagram
   - Skips attaching a token for the unauthenticated auth endpoints (`register`, `login`, `refresh`, `logout`, `verify-email`, `forgot-password`, `reset-password`) — these never need a bearer token.
   - For all other requests, attaches the current access token if present.
   - On `401` from an authenticated request (not from `/auth/refresh` itself, to avoid infinite loop), calls `SessionService.refresh()` once, retries the original request on success, or propagates the error (triggering `SessionService.clearSession()` + redirect) on failure.
+  - **Unaffected by the 2026-07-11 revision**: this interceptor still only reacts to `401`. `POST /auth/refresh` now fails with `422` (not `401`) on an invalid/missing cookie, but since `/auth/*` requests are already excluded from this interceptor's retry trigger entirely (they're the endpoints it skips token-attachment for), that status-code change doesn't touch this file — `SessionService.refresh()` itself is what interprets the `422`.
+  - `withCredentials: true` for `/auth/*` calls is set on `AuthService`'s own `HttpClient` calls (see `AuthService` above), not here — keeps this interceptor's one job (bearer token + 401 retry) unchanged, avoids growing its responsibility.
 - **Dependencies**: `SessionService`
 - **Reuses**: none yet — first interceptor in the app
 
@@ -216,11 +226,11 @@ sequenceDiagram
 
 ## Data Models
 
-One interface per file, under `features/identity/auth/interfaces/` and `features/identity/user/interfaces/`, matching `api-contracts.md` exactly.
+One interface per file, under `features/identity/auth/interfaces/` and `features/identity/user/interfaces/`, matching `api-contracts.md` exactly. Interface names use the project's `i`-prefix naming convention (`CLAUDE.md`, adopted after this design doc was first written). **Revised 2026-07-11**: `RefreshRequest`/`LogoutRequest` drop `refreshToken`; `LoginResponse` is renamed to `AuthTokenResponse` (matching `api-contracts.md`'s "Shared Types" naming) and drops `refreshToken`.
 
 ```typescript
 // features/identity/auth/interfaces/register-request.ts
-interface RegisterRequest {
+interface iRegisterRequest {
   email: string;
   taxId: string;
   password: string;
@@ -229,54 +239,55 @@ interface RegisterRequest {
 }
 
 // features/identity/auth/interfaces/login-request.ts
-interface LoginRequest {
+interface iLoginRequest {
   email: string;
   password: string;
 }
 
 // features/identity/auth/interfaces/refresh-request.ts
-interface RefreshRequest {
+// CHANGED 2026-07-11: refreshToken removed — it now travels via the httpOnly cookie
+interface iRefreshRequest {
   email: string;
-  refreshToken: string;
 }
 
 // features/identity/auth/interfaces/logout-request.ts
-interface LogoutRequest {
+// CHANGED 2026-07-11: refreshToken removed — same reason as iRefreshRequest
+interface iLogoutRequest {
   email: string;
-  refreshToken: string;
 }
 
 // features/identity/auth/interfaces/verify-email-request.ts
-interface VerifyEmailRequest {
+interface iVerifyEmailRequest {
   email: string;
   token: string;
 }
 
 // features/identity/auth/interfaces/forgot-password-request.ts
-interface ForgotPasswordRequest {
+interface iForgotPasswordRequest {
   email: string;
 }
 
 // features/identity/auth/interfaces/reset-password-request.ts
-interface ResetPasswordRequest {
+interface iResetPasswordRequest {
   email: string;
   token: string;
   newPassword: string;
 }
 
-// features/identity/auth/interfaces/login-response.ts
-// imports UserResponse from '@features/identity/user/interfaces/user-response'
-interface LoginResponse {
+// features/identity/auth/interfaces/auth-token-response.ts
+// RENAMED 2026-07-11 from login-response.ts/iLoginResponse — matches api-contracts.md's
+// "AuthTokenResponse" shared type; refreshToken removed (arrives via Set-Cookie, not body)
+// imports iUserResponse from '@features/identity/user/interfaces/user-response'
+interface iAuthTokenResponse {
   accessToken: string;
-  refreshToken: string;
-  user: UserResponse;
+  user: iUserResponse;
 }
 
 // features/identity/user/interfaces/user-response.ts
 type UserRole = 'Owner' | 'Renter' | 'Admin';
 type UserStatus = 'PendingVerification' | 'Active' | 'Deleted';
 
-interface UserResponse {
+interface iUserResponse {
   id: string;
   email: string;
   role: UserRole;
@@ -285,14 +296,14 @@ interface UserResponse {
 }
 
 // features/identity/user/interfaces/audit-log-entry-record.ts
-interface AuditLogEntryRecord {
+interface iAuditLogEntryRecord {
   eventType: string;
   occurredAt: string; // ISO 8601 with offset
 }
 
 // features/identity/user/interfaces/data-export-response.ts
-// imports AuditLogEntryRecord from './audit-log-entry-record'
-interface DataExportResponse {
+// imports iAuditLogEntryRecord from './audit-log-entry-record'
+interface iDataExportResponse {
   id: string;
   email: string;
   taxId: string;
@@ -300,11 +311,11 @@ interface DataExportResponse {
   status: string;
   createdAt: string;
   consentGivenAt: string | null;
-  auditHistory: AuditLogEntryRecord[];
+  auditHistory: iAuditLogEntryRecord[];
 }
 
 // shared/interfaces/validation-error-response.ts (422 shape, reused by every feature hitting this API)
-interface ValidationErrorResponse {
+interface iValidationErrorResponse {
   title: string;
   status: 422;
   errors: Record<string, string[]>;
@@ -312,14 +323,14 @@ interface ValidationErrorResponse {
 }
 
 // shared/interfaces/api-error-response.ts (400/401/404/409/429/500 shape, reused app-wide)
-interface ApiErrorResponse {
+interface iApiErrorResponse {
   title: string;
   status: number;
   extensions: { correlationId: string | null };
 }
 ```
 
-**Relationships**: `LoginResponse.user` is a `UserResponse`. `DataExportResponse.auditHistory` is `AuditLogEntryRecord[]`. `ValidationErrorResponse`/`ApiErrorResponse` are not identity-specific — they're the backend's universal error envelope, so they live in `shared/interfaces/` (per `CLAUDE.md`'s `shared/interfaces` convention) since every future feature calling this same API will hit the same two shapes; putting them under `features/identity` would force a duplicate later.
+**Relationships**: `iAuthTokenResponse.user` is an `iUserResponse`. `iDataExportResponse.auditHistory` is `iAuditLogEntryRecord[]`. `iValidationErrorResponse`/`iApiErrorResponse` are not identity-specific — they're the backend's universal error envelope, so they live in `shared/interfaces/` (per `CLAUDE.md`'s `shared/interfaces` convention) since every future feature calling this same API will hit the same two shapes; putting them under `features/identity` would force a duplicate later.
 
 ---
 
@@ -332,7 +343,7 @@ interface ApiErrorResponse {
 | `409` on register (duplicate email or tax ID) | Show a message identifying which field conflicted, focus that field | User can correct just that field and resubmit |
 | `401` "Invalid credentials" / "Account not active" / "Account locked" on login | Render the backend's exact `title` text in an inline form-level error | User sees precisely why login failed, per contract wording |
 | `401` on any authenticated request (expired token) | `authInterceptor` attempts one silent refresh + retry before this ever reaches the UI | Invisible to the user in the common case |
-| `401` on `/auth/refresh` itself | `SessionService.clearSession()`, redirect to `/login` (optionally with a "session expired" query flag) | User is logged out and told to sign in again |
+| `422` on `/auth/refresh` itself (**changed 2026-07-11**, was `401`) | `SessionService.clearSession()` (including persisted email), redirect to `/login` (optionally with a "session expired" query flag). ⚠️ **Uncertain**: `api-contracts.md` doesn't show a concrete example body for this specific `422` — it may follow the universal `iValidationErrorResponse` shape (`errors: {...}`, consistent with 422 always meaning "validation error" elsewhere in the contract) or the plainer `iApiErrorResponse` shape (just `title`/`status`). Since `SessionService` only needs to know "did it fail" (not render field-level messages for this case), the code doesn't need to parse the body at all — treat any `422` from this endpoint as "refresh failed, log out," regardless of which shape the body turns out to be. Flagging so a future body-shape assumption isn't silently guessed if this ever needs to render `title` text to the user. | User is logged out and told to sign in again |
 | `429` on any form in this feature | Generic rate-limit banner: "Too many attempts — try again shortly" | Consistent messaging across register/login/forgot-password/reset-password |
 | `400`/`404` on verify-email or reset-password (invalid/expired token, user not found) | Generic "this link is no longer valid" error view | No user-enumeration detail leaked, per contract's anti-enumeration intent |
 | `204` on forgot-password (always, regardless of email existence) | Always show the same "check your email" confirmation | Enumeration-safe by construction — UI never branches on this response |
@@ -345,9 +356,10 @@ interface ApiErrorResponse {
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Token storage mechanism | **Open — not decided.** `TokenStorageService` built as an abstraction now; concrete mechanism (memory+localStorage / localStorage / sessionStorage) chosen later per `context.md`. | User explicitly deferred this real security tradeoff rather than accepting a default; the abstraction means Tasks/Execute can proceed on everything else without blocking on it. |
+| Token storage mechanism | **Resolved 2026-07-11 by the backend contract, not by us.** `accessToken` in memory only; `refreshToken` never touched by frontend code (`httpOnly` cookie). | `api-contracts.md` was revised to remove `refreshToken` from response bodies entirely and mandate memory-only `accessToken` storage — the three-way tradeoff (memory+localStorage / localStorage / sessionStorage) the user previously deferred no longer applies; there's only one contract-compliant option left. |
+| Email persistence for bootstrap | **New, resolved 2026-07-11.** Persist only `email` (non-sensitive) in `localStorage` via `TokenStorageService`, used solely to know which account to call `POST /auth/refresh` for after a reload. | Without persisting *something*, `bootstrap()` has no way to restore a session after a reload wipes in-memory state, even though the `httpOnly` cookie is still valid — see `context.md` → "Email persistence for bootstrap". Confirmed with the user rather than assumed. |
 | JWT expiry reading | Hand-rolled `decodeJwtExpiry()` util (base64url decode + JSON parse of the payload segment), no library | Reading one numeric claim doesn't justify a dependency; `CLAUDE.md` explicitly discourages pulling in libraries for what a small utility can do |
-| Refresh deduplication | `SessionService.refresh()` shares one in-flight `Observable` (e.g. via a stored `Observable` reference cleared on completion) across concurrent callers | Both the proactive timer and multiple parallel `401`s from the interceptor could otherwise fire simultaneous `/auth/refresh` calls, which is wasteful and could race on token persistence |
+| Refresh deduplication | `SessionService.refresh()` shares one in-flight `Observable` (e.g. via a stored `Observable` reference cleared on completion) across concurrent callers | Both the proactive timer, `bootstrap()`, and multiple parallel `401`s from the interceptor could otherwise fire simultaneous `/auth/refresh` calls, which is wasteful and could race on token persistence |
 | `BaseHttpService` / shared HTTP abstraction | **Not built yet.** `AuthService`/`UserService` call `HttpClient` directly. | `estrutura.md` shows `shared/services/base-http.service.ts` in the aspirational blueprint, but with only one feature (`identity`) consuming HTTP so far, extracting a base class now is a premature abstraction for a single caller — build it when a second feature needs the same pattern, per `CLAUDE.md`'s root guidance against speculative abstractions |
 | Shared UI kit (`shared/ui/input`, `button`, `form-dialog`) | **Not built yet.** Auth pages use plain Tailwind-styled native elements. | Same reasoning — `estrutura.md`'s `shared/ui/*` kit is blueprint-aspirational; building a generic kit for this feature's exact needs alone risks guessing wrong about the API a second consumer will need |
 | Auth page placement | `core/pages/*` for register/login/verify-email/forgot-password/reset-password; `features/identity/user/pages/account` for the authenticated profile/LGPD page | Follows `CLAUDE.md`'s explicit split: `core` owns top-level/public shell pages (login named explicitly), `features/<domain>/<entity>` owns authenticated entity-specific pages |
@@ -357,13 +369,13 @@ interface ApiErrorResponse {
 
 ---
 
-## Open Verification Item
+## Open Verification Item (2026-07-11 revision)
 
-`TokenStorageService`'s concrete storage mechanism is unresolved (see `context.md`). Before Tasks defines the implementation task for that file, re-surface the three options to the user for a final decision — do not default silently.
+The `422` response body shape for a failed `POST /auth/refresh` is uncertain (see Error Handling Strategy table above) — `api-contracts.md` doesn't show a concrete example for this case, and it may or may not follow the universal `iValidationErrorResponse` shape. Not blocking (the migration tasks below don't need to parse this body), but flagged so nobody assumes a shape later without checking against a real backend response.
 
 ---
 
 ## Tips carried into next phase
 
-- Natural task breakdown: (1) shared error-envelope interfaces, (2) identity DTOs + `AuthService`/`UserService`, (3) `TokenStorageService` (blocked on open decision) + `decodeJwtExpiry` util, (4) `SessionService`, (5) `authGuard` + `authInterceptor` + `app.config.ts`/`app.routes.ts` wiring, (6) public pages (register → verify-email → login → forgot/reset password), (7) `AccountPage` (profile + LGPD export/delete).
-- P1 stories (IDENT-01 through 05) form one coherent vertical slice and should likely be one task group; P2 (IDENT-06, 07) and P3 (IDENT-08) can follow as separate, smaller groups — large enough overall that Tasks should NOT be skipped for this feature.
+- Original (T1–T21) task breakdown: (1) shared error-envelope interfaces, (2) identity DTOs + `AuthService`/`UserService`, (3) `TokenStorageService` + `decodeJwtExpiry` util, (4) `SessionService`, (5) `authGuard` + `authInterceptor` + `app.config.ts`/`app.routes.ts` wiring, (6) public pages (register → verify-email → login → forgot/reset password), (7) `AccountPage` (profile + LGPD export/delete). All 21 tasks are implemented; see `.specs/project/STATE.md`.
+- **2026-07-11 migration** (httpOnly refresh-cookie contract change): a much smaller, targeted task list — see `.specs/features/identity/tasks.md` → "Migration: httpOnly Refresh-Token Cookie". Touches DTOs, `AuthService`, `TokenStorageService`, `SessionService`, `App`'s bootstrap loading state, and the specs that assert on the old shapes. Does NOT touch `authGuard`, `UserService`, or any of the six page components' own logic (none of them reference `refreshToken` directly).

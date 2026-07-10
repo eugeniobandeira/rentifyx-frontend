@@ -66,9 +66,9 @@ RentityX frontend has no authentication or session capability today — `src/app
 **Why P1**: Core of the feature — every other authenticated capability depends on a working session.
 
 **Acceptance Criteria**:
-1. WHEN the user submits valid credentials THEN the system SHALL call `POST /auth/login` and, on `200`, store the returned `accessToken`, `refreshToken`, and `user`, then navigate to the post-login destination (home, or the preserved `returnUrl` — see `context.md`).
+1. WHEN the user submits valid credentials THEN the system SHALL call `POST /auth/login` with `withCredentials: true` and, on `200`, store the returned `accessToken` and `user` in memory (the `refreshToken` is set by the server as an `httpOnly` cookie and is never present in the response body — the frontend never reads or stores it), then navigate to the post-login destination (home, or the preserved `returnUrl` — see `context.md`).
 2. WHEN the backend returns `401` for invalid credentials, inactive account, or a locked account THEN the system SHALL display the distinct message returned by the backend (`Invalid credentials` / `Account not active` / `Account locked`) without leaking which case applies beyond what the backend message says.
-3. WHEN the app is reloaded (or opened in a new tab) with a previously persisted session THEN the system SHALL restore the session (silently refreshing the access token if needed) without forcing the user to log in again, unless the refresh token itself is invalid/expired.
+3. WHEN the app is reloaded (or opened in a new tab) with a previously persisted session THEN the system SHALL restore the session by calling `POST /auth/refresh` with `withCredentials: true` on bootstrap (relying on the browser automatically attaching the `httpOnly` refresh-token cookie) without forcing the user to log in again, unless that cookie itself is invalid/expired/missing (`422`) — see `context.md` for how the frontend knows which `email` to send on a cold reload.
 4. WHEN the user is logged in and navigates to a protected route THEN the system SHALL allow access without an extra login prompt.
 
 **Independent Test**: Log in with valid credentials, reload the browser tab, and confirm the session persists (protected route still accessible) without a visible login flash.
@@ -82,10 +82,10 @@ RentityX frontend has no authentication or session capability today — `src/app
 **Why P1**: Access tokens expire every 15 minutes — without refresh, any session longer than 15 minutes breaks mid-use, making the app unusable for real sessions.
 
 **Acceptance Criteria**:
-1. WHEN the access token is close to expiring (proactive) THEN the system SHALL call `POST /auth/refresh` with the current `email` + `refreshToken` and replace the stored tokens with the response before the old token expires.
+1. WHEN the access token is close to expiring (proactive) THEN the system SHALL call `POST /auth/refresh` with the current `email` and `withCredentials: true` (the refresh token itself travels via the `httpOnly` cookie, never in the request body) and replace the stored `accessToken`/`user` with the response before the old token expires.
 2. WHEN a request is sent with an already-expired access token (reactive fallback, e.g. clock drift or a missed proactive refresh) THEN the interceptor SHALL attempt one refresh and retry the original request before surfacing an error.
-3. WHEN `POST /auth/refresh` itself returns `401` (token invalid or expired) THEN the system SHALL clear the session and redirect to `/login`.
-4. WHEN the user clicks "logout" THEN the system SHALL call `POST /auth/logout` with the current `email` + `refreshToken`, clear all local session state regardless of the response (endpoint is idempotent, always `204`), and redirect to `/login`.
+3. WHEN `POST /auth/refresh` itself returns `422` (cookie missing, invalid, or expired) THEN the system SHALL clear the session (including the persisted `email`, see `context.md`) and redirect to `/login`.
+4. WHEN the user clicks "logout" THEN the system SHALL call `POST /auth/logout` with the current `email` and `withCredentials: true`, clear all local session state (including the persisted `email`) regardless of the response (endpoint is idempotent, always `204`), and redirect to `/login`.
 
 **Independent Test**: Log in, artificially fast-forward/mock the token's `exp`, and confirm a proactive refresh call fires before expiry; then log out and confirm the protected route redirects to `/login`.
 
@@ -165,18 +165,18 @@ RentityX frontend has no authentication or session capability today — `src/app
 
 | Requirement ID | Story | Phase | Status |
 |---|---|---|---|
-| IDENT-01 | P1: User registration | Tasks | In Tasks (T1–T4, T7, T13, T16) |
-| IDENT-02 | P1: Email verification | Tasks | In Tasks (T3, T7, T14, T16) |
-| IDENT-03 | P1: Login and session bootstrap | Tasks | In Tasks (T3, T4, T6, T9, T12, T15, T16) |
-| IDENT-04 | P1: Token refresh and logout | Tasks | In Tasks (T3, T5, T7, T9, T11, T12) |
-| IDENT-05 | P1: Route protection | Tasks | In Tasks (T9, T10, T15, T16) |
-| IDENT-06 | P2: Forgot / reset password | Tasks | In Tasks (T3, T7, T17, T18, T20) |
-| IDENT-07 | P2: View profile | Tasks | In Tasks (T2, T8, T19, T20) |
-| IDENT-08 | P3: LGPD data export & account deletion | Tasks | In Tasks (T8, T9, T21) |
+| IDENT-01 | P1: User registration | Verified | Implemented (T1–T4, T7, T13, T16) — unaffected by the 2026-07-11 contract revision |
+| IDENT-02 | P1: Email verification | Verified | Implemented (T3, T7, T14, T16) — unaffected by the 2026-07-11 contract revision |
+| IDENT-03 | P1: Login and session bootstrap | Needs rework | Originally implemented (T3, T4, T6, T9, T12, T15, T16); acceptance criteria revised 2026-07-11 for the httpOnly-cookie refresh flow — see `.specs/features/identity/tasks.md` → "Migration: httpOnly Refresh-Token Cookie" |
+| IDENT-04 | P1: Token refresh and logout | Needs rework | Originally implemented (T3, T5, T7, T9, T11, T12); acceptance criteria revised 2026-07-11 (422 not 401 on refresh failure, no `refreshToken` field) — see migration task list |
+| IDENT-05 | P1: Route protection | Verified | Implemented (T9, T10, T15, T16) — unaffected by the 2026-07-11 contract revision |
+| IDENT-06 | P2: Forgot / reset password | Verified | Implemented (T3, T7, T17, T18, T20) — unaffected by the 2026-07-11 contract revision |
+| IDENT-07 | P2: View profile | Verified | Implemented (T2, T8, T19, T20) — unaffected by the 2026-07-11 contract revision |
+| IDENT-08 | P3: LGPD data export & account deletion | Verified | Implemented (T8, T9, T21) — unaffected by the 2026-07-11 contract revision |
 
 **ID format:** `IDENT-[NUMBER]`
-**Status values:** Pending → In Design → In Tasks → Implementing → Verified
-**Coverage:** 8 total, 8 mapped to tasks, 0 unmapped. Full breakdown in `.specs/features/identity/tasks.md` (21 tasks across 6 phases). One task (T6, `TokenStorageService`) is blocked on the still-open token-storage decision in `context.md` — everything else is unblocked.
+**Status values:** Pending → In Design → In Tasks → Implementing → Verified → Needs rework
+**Coverage:** 8 total, 8 originally implemented across T1–T21. The 2026-07-11 `api-contracts.md` revision (httpOnly refresh-token cookie) requires rework of IDENT-03/IDENT-04's implementation; the other 6 requirements are unaffected. The previously-blocking token-storage decision (was blocking only T6) is now moot — resolved by the backend contract, not by us. See `.specs/features/identity/tasks.md` → "Migration: httpOnly Refresh-Token Cookie" for the concrete task breakdown.
 
 ---
 

@@ -32,6 +32,21 @@ Base URL: `http://localhost:{port}/api/v1` (local) | `https://{host}/api/v1` (pr
 | Access token lifetime | 15 minutes |
 | Refresh token lifetime | 30 days |
 
+### Refresh Token Cookie
+
+The refresh token is **never** exposed to JavaScript. It is set by the server as an `httpOnly` cookie on `/auth/login` and `/auth/refresh`, and cleared on `/auth/logout`.
+
+| Attribute | Value |
+|---|---|
+| Name | `refreshToken` |
+| `HttpOnly` | Yes |
+| `Secure` | Yes (over HTTPS; omitted automatically over local HTTP) |
+| `SameSite` | `Strict` |
+| `Path` | `/api/v1/auth` (only sent to auth endpoints) |
+| Max-Age | 30 days |
+
+**Frontend requirement:** every request to `/api/v1/auth/*` must be made with `credentials: 'include'` (fetch) or `withCredentials: true` (axios), or the browser will not attach the cookie. Because `SameSite=Strict` and `Path` are scoped to `/auth`, no CSRF token is required for these endpoints, but the frontend origin must match `Cors:AllowedOrigins` exactly.
+
 ---
 
 ## Request Headers
@@ -119,14 +134,14 @@ Endpoints return `200`, `201`, or `204` depending on the operation. Body is JSON
 }
 ```
 
-### `LoginResponse`
+### `AuthTokenResponse`
 ```json
 {
   "accessToken": "string (JWT)",
-  "refreshToken": "string",
   "user": { /* UserResponse */ }
 }
 ```
+The refresh token is **not** in this body — it arrives via the `refreshToken` `Set-Cookie` header. See [Refresh Token Cookie](#refresh-token-cookie).
 
 ### `AuditLogEntryRecord`
 ```json
@@ -187,10 +202,10 @@ Create a new user account.
 ---
 
 #### `POST /api/v1/auth/login`
-Authenticate and receive tokens.
+Authenticate and receive tokens. The refresh token is set as an `httpOnly` cookie (see [Refresh Token Cookie](#refresh-token-cookie)); it is not returned in the body.
 
 - Auth: No
-- Response: `200 OK` → `LoginResponse`
+- Response: `200 OK` → `AuthTokenResponse`
 
 **Request body**
 ```json
@@ -216,16 +231,15 @@ Authenticate and receive tokens.
 ---
 
 #### `POST /api/v1/auth/refresh`
-Rotate the refresh token and get a new access token.
+Rotate the refresh token and get a new access token. The refresh token is read from the `refreshToken` cookie (**not** the body) and rotated — the response sets a new cookie. Requires `credentials: 'include'`.
 
 - Auth: No
-- Response: `200 OK` → `LoginResponse`
+- Response: `200 OK` → `AuthTokenResponse`
 
 **Request body**
 ```json
 {
-  "email": "string",
-  "refreshToken": "string"
+  "email": "string"
 }
 ```
 
@@ -233,17 +247,17 @@ Rotate the refresh token and get a new access token.
 | Field | Rules |
 |---|---|
 | `email` | Required · valid format |
-| `refreshToken` | Required · max 512 chars |
+| `refreshToken` cookie | Required · max 512 chars — missing/invalid cookie yields the same `422` as a bad token |
 
 **Business errors**
 | Status | Description |
 |---|---|
-| `401` | Token invalid or expired |
+| `422` | Token invalid, expired, or cookie missing |
 
 ---
 
 #### `POST /api/v1/auth/logout`
-Invalidate the refresh token. Always returns `204` (idempotent).
+Invalidate the refresh token and clear the cookie. Always returns `204` (idempotent) — including when the cookie is already missing. Requires `credentials: 'include'`.
 
 - Auth: No
 - Response: `204 No Content`
@@ -251,8 +265,7 @@ Invalidate the refresh token. Always returns `204` (idempotent).
 **Request body**
 ```json
 {
-  "email": "string",
-  "refreshToken": "string"
+  "email": "string"
 }
 ```
 
@@ -260,7 +273,6 @@ Invalidate the refresh token. Always returns `204` (idempotent).
 | Field | Rules |
 |---|---|
 | `email` | Required · valid format |
-| `refreshToken` | Required |
 
 ---
 
@@ -417,11 +429,15 @@ Export all personal data held about the authenticated user (LGPD Art. 18 IV).
 ```
 1. POST /auth/register        → receive UserResponse (status: PendingVerification)
 2. POST /auth/verify-email    → receive UserResponse (status: Active)
-3. POST /auth/login           → receive accessToken + refreshToken
+3. POST /auth/login           → receive accessToken in body; refreshToken set as httpOnly cookie
 4. GET  /users/me             → Authorization: Bearer {accessToken}
-5. POST /auth/refresh         → rotate when accessToken expires (every 15 min)
-6. POST /auth/logout          → invalidate refreshToken on sign-out
+5. POST /auth/refresh         → credentials:'include'; rotates accessToken + refreshToken cookie (every 15 min)
+6. POST /auth/logout          → credentials:'include'; invalidates refreshToken and clears the cookie
 ```
+
+**Frontend token storage:**
+- `accessToken` — keep in memory only (JS variable / app state), never in `localStorage`/`sessionStorage`. It is lost on page reload; re-fetch it via `/auth/refresh` (step 5) on app bootstrap, since the browser still holds the refresh cookie.
+- `refreshToken` — never touched by frontend code. The browser stores and sends it automatically as long as requests to `/api/v1/auth/*` are made with credentials included.
 
 ---
 
