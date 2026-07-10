@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { SessionService } from '@core/services/session.service';
+import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { UserService } from '@features/identity/user/services/user.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
 import { iDataExportResponse } from '@features/identity/user/interfaces/data-export-response';
