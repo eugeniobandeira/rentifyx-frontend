@@ -1,3 +1,228 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Surface */
+  --color-bg-canvas: var(--color-slate-50);
+  --color-bg-surface: #fff;
+  --color-bg-surface-raised: #fff;
+  --color-bg-overlay: color-mix(in oklab, var(--color-slate-950) 50%, transparent);
+
+  /* Text */
+  --color-text-primary: var(--color-slate-900);
+  --color-text-secondary: var(--color-slate-600);
+  --color-text-muted: var(--color-slate-400);
+  --color-text-disabled: var(--color-slate-300);
+  --color-text-inverse: #fff;
+
+  /* Border */
+  --color-border-default: var(--color-slate-200);
+  --color-border-strong: var(--color-slate-300);
+  --color-border-focus: var(--color-blue-500);
+
+  /* Brand (trust & security) */
+  --color-brand-default: var(--color-blue-600);
+  --color-brand-hover: var(--color-blue-700);
+  --color-brand-active: var(--color-blue-800);
+  --color-brand-subtle: var(--color-blue-50);
+  --color-brand-foreground: #fff;
+
+  /* Accent (conversion CTAs / featured badges only) */
+  --color-accent-default: var(--color-orange-600);
+  --color-accent-hover: var(--color-orange-700);
+  --color-accent-active: var(--color-orange-800);
+  --color-accent-subtle: var(--color-orange-50);
+  --color-accent-foreground: #fff;
+
+  /* Feedback: success */
+  --color-success: var(--color-emerald-600);
+  --color-success-subtle: var(--color-emerald-50);
+  --color-success-subtle-foreground: var(--color-emerald-700);
+  --color-success-border: var(--color-emerald-200);
+
+  /* Feedback: warning */
+  --color-warning: var(--color-amber-500);
+  --color-warning-foreground: var(--color-slate-900);
+  --color-warning-subtle: var(--color-amber-50);
+  --color-warning-subtle-foreground: var(--color-amber-800);
+  --color-warning-border: var(--color-amber-200);
+
+  /* Feedback: error */
+  --color-error: var(--color-red-600);
+  --color-error-subtle: var(--color-red-50);
+  --color-error-subtle-foreground: var(--color-red-700);
+  --color-error-border: var(--color-red-200);
+
+  /* Feedback: info */
+  --color-info: var(--color-sky-600);
+  --color-info-subtle: var(--color-sky-50);
+  --color-info-subtle-foreground: var(--color-sky-700);
+  --color-info-border: var(--color-sky-200);
+
+  /* Rental status: available */
+  --color-status-available: var(--color-emerald-600);
+  --color-status-available-subtle: var(--color-emerald-50);
+  --color-status-available-subtle-foreground: var(--color-emerald-700);
+
+  /* Rental status: reserved */
+  --color-status-reserved: var(--color-violet-600);
+  --color-status-reserved-subtle: var(--color-violet-50);
+  --color-status-reserved-subtle-foreground: var(--color-violet-700);
+
+  /* Rental status: rented (active, time-bound) */
+  --color-status-rented: var(--color-amber-500);
+  --color-status-rented-foreground: var(--color-slate-900);
+  --color-status-rented-subtle: var(--color-amber-50);
+  --color-status-rented-subtle-foreground: var(--color-amber-800);
+
+  /* Rental status: unavailable */
+  --color-status-unavailable: var(--color-slate-500);
+  --color-status-unavailable-subtle: var(--color-slate-100);
+  --color-status-unavailable-subtle-foreground: var(--color-slate-600);
+
+  /* Rental status: overdue */
+  --color-status-overdue: var(--color-red-600);
+  --color-status-overdue-subtle: var(--color-red-50);
+  --color-status-overdue-subtle-foreground: var(--color-red-700);
+
+  /* Category badges: fixed 8 slots + neutral fallback (slot 0) */
+  --color-category-0-subtle: var(--color-slate-100);
+  --color-category-0-subtle-foreground: var(--color-slate-700);
+
+  --color-category-1-subtle: var(--color-teal-100);
+  --color-category-1-subtle-foreground: var(--color-teal-800);
+
+  --color-category-2-subtle: var(--color-indigo-100);
+  --color-category-2-subtle-foreground: var(--color-indigo-800);
+
+  --color-category-3-subtle: var(--color-pink-100);
+  --color-category-3-subtle-foreground: var(--color-pink-800);
+
+  --color-category-4-subtle: var(--color-lime-100);
+  --color-category-4-subtle-foreground: var(--color-lime-800);
+
+  --color-category-5-subtle: var(--color-cyan-100);
+  --color-category-5-subtle-foreground: var(--color-cyan-800);
+
+  --color-category-6-subtle: var(--color-fuchsia-100);
+  --color-category-6-subtle-foreground: var(--color-fuchsia-800);
+
+  --color-category-7-subtle: var(--color-stone-100);
+  --color-category-7-subtle-foreground: var(--color-stone-800);
+
+  --color-category-8-subtle: var(--color-yellow-100);
+  --color-category-8-subtle-foreground: var(--color-yellow-800);
+}
+
+.dark {
+  /* Surface */
+  --color-bg-canvas: var(--color-slate-950);
+  --color-bg-surface: var(--color-slate-900);
+  --color-bg-surface-raised: var(--color-slate-800);
+  --color-bg-overlay: color-mix(in oklab, var(--color-slate-950) 70%, transparent);
+
+  /* Text */
+  --color-text-primary: var(--color-slate-50);
+  --color-text-secondary: var(--color-slate-300);
+  --color-text-muted: var(--color-slate-500);
+  --color-text-disabled: var(--color-slate-600);
+
+  /* Border */
+  --color-border-default: var(--color-slate-800);
+  --color-border-strong: var(--color-slate-700);
+  --color-border-focus: var(--color-blue-400);
+
+  /* Brand */
+  --color-brand-default: var(--color-blue-500);
+  --color-brand-hover: var(--color-blue-400);
+  --color-brand-active: var(--color-blue-300);
+  --color-brand-subtle: var(--color-blue-950);
+
+  /* Accent */
+  --color-accent-default: var(--color-orange-500);
+  --color-accent-hover: var(--color-orange-400);
+  --color-accent-active: var(--color-orange-300);
+  --color-accent-subtle: var(--color-orange-950);
+
+  /* Feedback: success */
+  --color-success: var(--color-emerald-500);
+  --color-success-subtle: var(--color-emerald-950);
+  --color-success-subtle-foreground: var(--color-emerald-300);
+  --color-success-border: var(--color-emerald-800);
+
+  /* Feedback: warning */
+  --color-warning: var(--color-amber-400);
+  --color-warning-foreground: var(--color-slate-950);
+  --color-warning-subtle: var(--color-amber-950);
+  --color-warning-subtle-foreground: var(--color-amber-300);
+  --color-warning-border: var(--color-amber-800);
+
+  /* Feedback: error */
+  --color-error: var(--color-red-500);
+  --color-error-subtle: var(--color-red-950);
+  --color-error-subtle-foreground: var(--color-red-300);
+  --color-error-border: var(--color-red-800);
+
+  /* Feedback: info */
+  --color-info: var(--color-sky-500);
+  --color-info-subtle: var(--color-sky-950);
+  --color-info-subtle-foreground: var(--color-sky-300);
+  --color-info-border: var(--color-sky-800);
+
+  /* Rental status: available */
+  --color-status-available: var(--color-emerald-500);
+  --color-status-available-subtle: var(--color-emerald-950);
+  --color-status-available-subtle-foreground: var(--color-emerald-300);
+
+  /* Rental status: reserved */
+  --color-status-reserved: var(--color-violet-500);
+  --color-status-reserved-subtle: var(--color-violet-950);
+  --color-status-reserved-subtle-foreground: var(--color-violet-300);
+
+  /* Rental status: rented */
+  --color-status-rented: var(--color-amber-400);
+  --color-status-rented-foreground: var(--color-slate-950);
+  --color-status-rented-subtle: var(--color-amber-950);
+  --color-status-rented-subtle-foreground: var(--color-amber-300);
+
+  /* Rental status: unavailable */
+  --color-status-unavailable: var(--color-slate-400);
+  --color-status-unavailable-subtle: var(--color-slate-800);
+  --color-status-unavailable-subtle-foreground: var(--color-slate-400);
+
+  /* Rental status: overdue */
+  --color-status-overdue: var(--color-red-500);
+  --color-status-overdue-subtle: var(--color-red-950);
+  --color-status-overdue-subtle-foreground: var(--color-red-300);
+
+  /* Category badges */
+  --color-category-0-subtle: var(--color-slate-800);
+  --color-category-0-subtle-foreground: var(--color-slate-300);
+
+  --color-category-1-subtle: var(--color-teal-950);
+  --color-category-1-subtle-foreground: var(--color-teal-200);
+
+  --color-category-2-subtle: var(--color-indigo-950);
+  --color-category-2-subtle-foreground: var(--color-indigo-200);
+
+  --color-category-3-subtle: var(--color-pink-950);
+  --color-category-3-subtle-foreground: var(--color-pink-200);
+
+  --color-category-4-subtle: var(--color-lime-950);
+  --color-category-4-subtle-foreground: var(--color-lime-200);
+
+  --color-category-5-subtle: var(--color-cyan-950);
+  --color-category-5-subtle-foreground: var(--color-cyan-200);
+
+  --color-category-6-subtle: var(--color-fuchsia-950);
+  --color-category-6-subtle-foreground: var(--color-fuchsia-200);
+
+  --color-category-7-subtle: var(--color-stone-950);
+  --color-category-7-subtle-foreground: var(--color-stone-200);
+
+  --color-category-8-subtle: var(--color-yellow-950);
+  --color-category-8-subtle-foreground: var(--color-yellow-200);
+}
