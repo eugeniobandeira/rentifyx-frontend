@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
-import { SessionService } from '@core/services/session.service';
+import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { API_BASE_URL } from '@shared/constants/api-base-url.constant';
 
 const AUTH_BASE_URL = `${API_BASE_URL}/auth/`;
