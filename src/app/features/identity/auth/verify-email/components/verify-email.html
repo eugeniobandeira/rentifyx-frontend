@@ -1,0 +1,37 @@
+<section class="flex min-h-screen items-center justify-center bg-bg-canvas px-4 py-12">
+  <div class="w-full max-w-md rounded-lg border border-border-default bg-bg-surface p-6 sm:p-8">
+    @switch (status()) {
+      @case ('loading') {
+        <p class="text-center text-text-secondary">Verifying your email…</p>
+      }
+      @case ('success') {
+        <div
+          class="rounded-md border border-success-border bg-success-subtle p-4 text-success-subtle-foreground"
+        >
+          <h1 class="text-lg font-semibold">Email verified</h1>
+          <p class="mt-2 text-sm">Your account has been successfully verified.</p>
+        </div>
+        <a
+          routerLink="/login"
+          class="mt-6 inline-block w-full rounded-md bg-brand-default px-4 py-2 text-center text-sm font-medium text-brand-foreground hover:bg-brand-hover"
+        >
+          Go to login
+        </a>
+      }
+      @case ('error') {
+        <div
+          class="rounded-md border border-error-border bg-error-subtle p-4 text-error-subtle-foreground"
+        >
+          <h1 class="text-lg font-semibold">This link is no longer valid</h1>
+          <p class="mt-2 text-sm">
+            This verification link has expired or is no longer valid. Please request a new
+            one or return to login.
+          </p>
+        </div>
+        <a routerLink="/login" class="mt-6 inline-block text-sm font-medium text-brand-default">
+          Back to login
+        </a>
+      }
+    }
+  </div>
+</section>
