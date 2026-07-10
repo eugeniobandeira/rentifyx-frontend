@@ -1,7 +1,7 @@
 # Identity Tasks
 
 **Design**: `.specs/features/identity/design.md`
-**Status**: T1–T21 implemented (see `.specs/project/STATE.md`). New migration section added 2026-07-11 below for the httpOnly refresh-cookie contract revision — not yet executed.
+**Status**: T1–T21 implemented (see `.specs/project/STATE.md`). Migration section below (M1–M4, httpOnly refresh-cookie contract revision) implemented and verified 2026-07-11 — full suite (91/92, sole failure pre-existing/unrelated) + build green. Uncommitted, per `CLAUDE.md`'s Git policy (commits only on explicit request).
 
 ---
 
