@@ -20,10 +20,11 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('renders the router outlet once session restoration finishes', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('RentityX Frontend');
+    expect(compiled.querySelector('[data-testid="app-restoring-session"]')).toBeNull();
+    expect(compiled.querySelector('router-outlet')).not.toBeNull();
   });
 });
