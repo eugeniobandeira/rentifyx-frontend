@@ -1,3 +1,9 @@
 <main class="app-shell">
-  <router-outlet />
+  @if (isRestoringSession()) {
+    <div class="flex min-h-screen items-center justify-center bg-bg-canvas">
+      <p class="text-sm text-text-secondary">Restoring session…</p>
+    </div>
+  } @else {
+    <router-outlet />
+  }
 </main>
