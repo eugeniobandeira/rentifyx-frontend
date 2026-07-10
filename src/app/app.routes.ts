@@ -7,6 +7,19 @@ export const routes: Routes = [
     component: HomePage,
   },
   {
+    path: 'register',
+    loadComponent: () => import('./core/pages/register/register').then((m) => m.RegisterPage),
+  },
+  {
+    path: 'verify-email',
+    loadComponent: () =>
+      import('./core/pages/verify-email/verify-email').then((m) => m.VerifyEmailPage),
+  },
+  {
+    path: 'login',
+    loadComponent: () => import('./core/pages/login/login').then((m) => m.LoginPage),
+  },
+  {
     path: '**',
     redirectTo: '',
   },
