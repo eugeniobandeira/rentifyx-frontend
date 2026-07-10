@@ -1,3 +1,3 @@
-export interface ForgotPasswordRequest {
+export interface iForgotPasswordRequest {
   email: string;
 }

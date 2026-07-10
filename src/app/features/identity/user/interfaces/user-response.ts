@@ -1,7 +1,7 @@
 export type UserRole = 'Owner' | 'Renter' | 'Admin';
 export type UserStatus = 'PendingVerification' | 'Active' | 'Deleted';
 
-export interface UserResponse {
+export interface iUserResponse {
   id: string;
   email: string;
   role: UserRole;

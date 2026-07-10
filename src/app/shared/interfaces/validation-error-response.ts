@@ -1,4 +1,4 @@
-export interface ValidationErrorResponse {
+export interface iValidationErrorResponse {
   title: string;
   status: 422;
   errors: Record<string, string[]>;

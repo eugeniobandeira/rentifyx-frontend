@@ -1,4 +1,4 @@
-export interface AuditLogEntryRecord {
+export interface iAuditLogEntryRecord {
   eventType: string;
   occurredAt: string;
 }

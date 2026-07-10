@@ -1,4 +1,4 @@
-export interface LogoutRequest {
+export interface iLogoutRequest {
   email: string;
   refreshToken: string;
 }

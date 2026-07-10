@@ -1,4 +1,4 @@
-export interface RefreshRequest {
+export interface iRefreshRequest {
   email: string;
   refreshToken: string;
 }

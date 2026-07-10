@@ -1,4 +1,4 @@
-import { CategoryColorSlot } from '@shared/interfaces/category-color-slot';
+import { iCategoryColorSlot } from '@shared/interfaces/category-color-slot';
 
 const TOTAL_SLOTS = 8;
 
@@ -13,7 +13,7 @@ const CURATED_CATEGORY_SLUGS: Record<string, number> = {
   hobbies: 8,
 };
 
-export function getCategorySlot(categorySlug: string): CategoryColorSlot {
+export function getCategorySlot(categorySlug: string): iCategoryColorSlot {
   const slot = resolveSlot(categorySlug);
   return {
     slot,

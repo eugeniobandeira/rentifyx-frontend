@@ -1,7 +1,7 @@
-import { UserResponse } from '@features/identity/user/interfaces/user-response';
+import { iUserResponse } from '@features/identity/user/interfaces/user-response';
 
-export interface LoginResponse {
+export interface iLoginResponse {
   accessToken: string;
   refreshToken: string;
-  user: UserResponse;
+  user: iUserResponse;
 }

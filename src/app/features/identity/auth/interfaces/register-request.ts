@@ -1,4 +1,4 @@
-export interface RegisterRequest {
+export interface iRegisterRequest {
   email: string;
   taxId: string;
   password: string;

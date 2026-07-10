@@ -6,21 +6,21 @@ const STORAGE_KEY = 'rentityx-color-scheme';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  private readonly document = inject(DOCUMENT);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly _document = inject(DOCUMENT);
+  private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  private readonly mode = signal<ColorSchemeMode>(this.readStoredMode());
-  private readonly systemPrefersDark = signal(this.readSystemPreference());
+  private readonly _mode = signal<ColorSchemeMode>(this._readStoredMode());
+  private readonly _systemPrefersDark = signal(this._readSystemPreference());
 
   readonly isDark = computed(() => {
-    const mode = this.mode();
-    return mode === 'system' ? this.systemPrefersDark() : mode === 'dark';
+    const mode = this._mode();
+    return mode === 'system' ? this._systemPrefersDark() : mode === 'dark';
   });
 
   constructor() {
-    this.applyToDocument(this.isDark());
-    if (this.isBrowser) {
-      this.watchSystemPreference();
+    this._applyToDocument(this.isDark());
+    if (this._isBrowser) {
+      this._watchSystemPreference();
     }
   }
 
@@ -29,39 +29,39 @@ export class ThemeService {
   }
 
   setMode(mode: ColorSchemeMode): void {
-    this.mode.set(mode);
-    if (this.isBrowser) {
-      this.document.defaultView?.localStorage.setItem(STORAGE_KEY, mode);
+    this._mode.set(mode);
+    if (this._isBrowser) {
+      this._document.defaultView?.localStorage.setItem(STORAGE_KEY, mode);
     }
-    this.applyToDocument(this.isDark());
+    this._applyToDocument(this.isDark());
   }
 
-  private readStoredMode(): ColorSchemeMode {
-    if (!this.isBrowser) {
+  private _readStoredMode(): ColorSchemeMode {
+    if (!this._isBrowser) {
       return 'system';
     }
-    const stored = this.document.defaultView?.localStorage.getItem(STORAGE_KEY);
+    const stored = this._document.defaultView?.localStorage.getItem(STORAGE_KEY);
     return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
   }
 
-  private readSystemPreference(): boolean {
-    if (!this.isBrowser) {
+  private _readSystemPreference(): boolean {
+    if (!this._isBrowser) {
       return false;
     }
-    return this.document.defaultView?.matchMedia('(prefers-color-scheme: dark)').matches ?? false;
+    return this._document.defaultView?.matchMedia('(prefers-color-scheme: dark)').matches ?? false;
   }
 
-  private watchSystemPreference(): void {
-    const mediaQuery = this.document.defaultView?.matchMedia('(prefers-color-scheme: dark)');
+  private _watchSystemPreference(): void {
+    const mediaQuery = this._document.defaultView?.matchMedia('(prefers-color-scheme: dark)');
     mediaQuery?.addEventListener('change', (event) => {
-      this.systemPrefersDark.set(event.matches);
-      if (this.mode() === 'system') {
-        this.applyToDocument(this.isDark());
+      this._systemPrefersDark.set(event.matches);
+      if (this._mode() === 'system') {
+        this._applyToDocument(this.isDark());
       }
     });
   }
 
-  private applyToDocument(isDark: boolean): void {
-    this.document.documentElement.classList.toggle('dark', isDark);
+  private _applyToDocument(isDark: boolean): void {
+    this._document.documentElement.classList.toggle('dark', isDark);
   }
 }

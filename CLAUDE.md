@@ -48,4 +48,8 @@ npm test            # ng test — runs unit tests via Vitest (Angular's unit-tes
   - Avoid loading large third-party libraries for something a few utility classes or a small composable can do.
   - Design shared/`ui` components and `composables` to be generic and reusable across features (per the `estrutura.md` blueprint) rather than duplicating logic per feature — this is what keeps the app scalable as more `features/<domain>/<entity>` folders are added.
 - **TypeScript strictness**: `noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, plus Angular-specific `strictInjectionParameters` and `strictInputAccessModifiers` are all on — write code compatible with these from the start rather than retrofitting.
+- **Naming conventions**:
+  - Every `interface` name starts with a lowercase `i` prefix (e.g. `iUser`, `iAuthRequest`, `iListApiResponse`) — not uppercase `I`.
+  - Every private class member (fields and methods) is prefixed with `_` (e.g. `private _tokenStorage`, `private _handleError()`).
+  - Prefer precise, explicit types everywhere; avoid `any` — use `unknown` with narrowing, generics, or a proper interface/type instead.
 - **Testing**: uses Angular's Vitest-based unit-test builder (`@angular/build:unit-test`), not Karma/Jasmine runner config. Test files are colocated as `*.spec.ts` next to the code under test.

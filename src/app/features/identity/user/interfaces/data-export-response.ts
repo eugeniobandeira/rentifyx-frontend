@@ -1,6 +1,6 @@
-import { AuditLogEntryRecord } from './audit-log-entry-record';
+import { iAuditLogEntryRecord } from './audit-log-entry-record';
 
-export interface DataExportResponse {
+export interface iDataExportResponse {
   id: string;
   email: string;
   taxId: string;
@@ -8,5 +8,5 @@ export interface DataExportResponse {
   status: string;
   createdAt: string;
   consentGivenAt: string | null;
-  auditHistory: AuditLogEntryRecord[];
+  auditHistory: iAuditLogEntryRecord[];
 }
