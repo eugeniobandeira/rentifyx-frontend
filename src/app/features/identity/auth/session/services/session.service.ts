@@ -1,6 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
 import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
 import { decodeJwtExpiry } from '@shared/utils/decode-jwt-expiry.util';
 import { LoginService } from '@features/identity/auth/login/services/login.service';
@@ -17,7 +16,6 @@ export class SessionService {
   private readonly _loginService = inject(LoginService);
   private readonly _sessionApi = inject(SessionApiService);
   private readonly _tokenStorage = inject(TokenStorageService);
-  private readonly _router = inject(Router);
   private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly _accessTokenSignal = signal<string | null>(null);
@@ -61,17 +59,13 @@ export class SessionService {
 
     if (!email) {
       this.clearSession();
-      void this._router.navigateByUrl('/login');
       return of(undefined);
     }
 
     return this._sessionApi.logout({ email }).pipe(
       map(() => undefined),
       catchError(() => of(undefined)),
-      tap(() => {
-        this.clearSession();
-        void this._router.navigateByUrl('/login');
-      }),
+      tap(() => this.clearSession()),
     );
   }
 
@@ -92,7 +86,6 @@ export class SessionService {
       map((response) => response.user),
       catchError((error: unknown) => {
         this.clearSession();
-        void this._router.navigateByUrl('/login');
         return throwError(() => error);
       }),
       finalize(() => {
@@ -103,6 +96,10 @@ export class SessionService {
 
     this._inFlightRefresh = request$;
     return request$;
+  }
+
+  updateCurrentUser(user: iUserResponse): void {
+    this._currentUserSignal.set(user);
   }
 
   clearSession(): void {
@@ -116,7 +113,7 @@ export class SessionService {
   }
 
   private _applySession(response: iAuthTokenResponse): void {
-    this._tokenStorage.setSession(response.accessToken, response.user.email);
+    this._tokenStorage.setEmail(response.user.email);
     this._accessTokenSignal.set(response.accessToken);
     this._currentUserSignal.set(response.user);
     this._scheduleRefresh(response.accessToken);

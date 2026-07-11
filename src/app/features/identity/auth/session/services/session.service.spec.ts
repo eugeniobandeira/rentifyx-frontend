@@ -1,6 +1,5 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { LoginService } from '@features/identity/auth/login/services/login.service';
 import { iAuthTokenResponse } from '../interfaces/auth-token-response';
@@ -34,30 +33,25 @@ describe('SessionService', () => {
   let loginService: { login: ReturnType<typeof vi.fn> };
   let sessionApi: { logout: ReturnType<typeof vi.fn>; refresh: ReturnType<typeof vi.fn> };
   let tokenStorage: {
-    getAccessToken: ReturnType<typeof vi.fn>;
     getEmail: ReturnType<typeof vi.fn>;
-    setSession: ReturnType<typeof vi.fn>;
+    setEmail: ReturnType<typeof vi.fn>;
     clear: ReturnType<typeof vi.fn>;
   };
-  let router: { navigateByUrl: ReturnType<typeof vi.fn> };
 
   function configure(platform: 'browser' | 'server' = 'browser'): SessionService {
     loginService = { login: vi.fn() };
     sessionApi = { logout: vi.fn(), refresh: vi.fn() };
     tokenStorage = {
-      getAccessToken: vi.fn().mockReturnValue(null),
       getEmail: vi.fn().mockReturnValue(null),
-      setSession: vi.fn(),
+      setEmail: vi.fn(),
       clear: vi.fn(),
     };
-    router = { navigateByUrl: vi.fn() };
 
     TestBed.configureTestingModule({
       providers: [
         { provide: LoginService, useValue: loginService },
         { provide: SessionApiService, useValue: sessionApi },
         { provide: TokenStorageService, useValue: tokenStorage },
-        { provide: Router, useValue: router },
         { provide: PLATFORM_ID, useValue: platform },
       ],
     });
@@ -76,10 +70,20 @@ describe('SessionService', () => {
 
     service.login({ email: user.email, password: 'secret' }).subscribe();
 
-    expect(tokenStorage.setSession).toHaveBeenCalledWith(response.accessToken, user.email);
+    expect(tokenStorage.setEmail).toHaveBeenCalledWith(user.email);
     expect(service.currentUser()).toEqual(user);
     expect(service.isAuthenticated()).toBe(true);
     expect(service.accessToken()).toBe(response.accessToken);
+  });
+
+  it('updateCurrentUser() overwrites currentUser without touching the token/email', () => {
+    const service = configure();
+    const updated: iUserResponse = { ...user, email: 'jane.new@example.com' };
+
+    service.updateCurrentUser(updated);
+
+    expect(service.currentUser()).toEqual(updated);
+    expect(tokenStorage.setEmail).not.toHaveBeenCalled();
   });
 
   it('logout() calls SessionApiService.logout with just email, then clears state regardless of the response', () => {
@@ -92,7 +96,6 @@ describe('SessionService', () => {
     expect(sessionApi.logout).toHaveBeenCalledWith({ email: user.email });
     expect(tokenStorage.clear).toHaveBeenCalled();
     expect(service.currentUser()).toBeNull();
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
   });
 
   it('logout() clears local state even when the backend call errors', () => {
@@ -104,7 +107,6 @@ describe('SessionService', () => {
 
     expect(tokenStorage.clear).toHaveBeenCalled();
     expect(service.currentUser()).toBeNull();
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
   });
 
   it('bootstrap() restores the session via POST /auth/refresh when an email is persisted', () => {
