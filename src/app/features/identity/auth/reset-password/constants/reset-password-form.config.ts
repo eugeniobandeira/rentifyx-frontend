@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { FormControl, FormGroup, NonNullableFormBuilder, Validators } from '@angular/forms';
-import { PASSWORD_PATTERN } from './reset-password.constants';
+import { PASSWORD_PATTERN } from '@shared/constants/password-pattern.constants';
 
 type ResetPasswordFormControl = {
   newPassword: FormControl<string>;

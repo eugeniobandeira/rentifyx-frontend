@@ -1,7 +1,8 @@
 import { inject } from '@angular/core';
 import { FormControl, FormGroup, NonNullableFormBuilder, Validators } from '@angular/forms';
 import { UserRole } from '@features/identity/user/types/user-role';
-import { DEFAULT_REGISTER_ROLE, PASSWORD_PATTERN } from './register.constants';
+import { PASSWORD_PATTERN } from '@shared/constants/password-pattern.constants';
+import { DEFAULT_REGISTER_ROLE } from './register.constants';
 
 type RegisterFormControl = {
   email: FormControl<string>;
