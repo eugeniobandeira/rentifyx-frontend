@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
@@ -28,12 +29,21 @@ const dataExport: iDataExportResponse = {
 
 describe('AccountPage', () => {
   let userService: { getMe: ReturnType<typeof vi.fn>; deleteMe: ReturnType<typeof vi.fn>; exportMyData: ReturnType<typeof vi.fn> };
-  let sessionService: { clearSession: ReturnType<typeof vi.fn> };
+  let sessionService: {
+    currentUser: ReturnType<typeof signal<iUserResponse | null>>;
+    updateCurrentUser: ReturnType<typeof vi.fn>;
+    clearSession: ReturnType<typeof vi.fn>;
+  };
   let router: { navigateByUrl: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     userService = { getMe: vi.fn(), deleteMe: vi.fn(), exportMyData: vi.fn() };
-    sessionService = { clearSession: vi.fn() };
+    const currentUserSignal = signal<iUserResponse | null>(null);
+    sessionService = {
+      currentUser: currentUserSignal,
+      updateCurrentUser: vi.fn((updated: iUserResponse) => currentUserSignal.set(updated)),
+      clearSession: vi.fn(),
+    };
     router = { navigateByUrl: vi.fn() };
   });
 
@@ -61,6 +71,7 @@ describe('AccountPage', () => {
     expect(text).toContain('Renter');
     expect(text).toContain('Active');
     expect(text).toContain(new Date(user.createdAt).toLocaleDateString());
+    expect(sessionService.updateCurrentUser).toHaveBeenCalledWith(user);
   });
 
   it('shows a generic error state on failure without retrying', () => {

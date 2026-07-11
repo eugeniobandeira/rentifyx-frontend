@@ -4,9 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { UserService } from '@features/identity/user/services/user.service';
-import { iUserResponse } from '@features/identity/user/interfaces/user-response';
-
-type AccountStatus = 'loading' | 'loaded' | 'error';
+import { useFormSubmission } from '@shared/composables/use-form-submission';
 
 @Component({
   selector: 'app-account',
@@ -21,8 +19,11 @@ export class AccountPage {
   private readonly _router = inject(Router);
   private readonly _document = inject(DOCUMENT);
 
-  protected readonly status = signal<AccountStatus>('loading');
-  readonly user = signal<iUserResponse | null>(null);
+  private readonly _formSubmission = useFormSubmission();
+  protected readonly submitting = this._formSubmission.submitting;
+  protected readonly banner = this._formSubmission.banner;
+
+  readonly user = this._sessionService.currentUser;
 
   readonly exporting = signal(false);
   readonly exportBanner = signal<string | null>(null);
@@ -32,12 +33,16 @@ export class AccountPage {
   deleteConfirmText = '';
 
   constructor() {
+    this._formSubmission.setSubmitting(true);
     this._userService.getMe().subscribe({
       next: (user) => {
-        this.user.set(user);
-        this.status.set('loaded');
+        this._sessionService.updateCurrentUser(user);
+        this._formSubmission.setSubmitting(false);
       },
-      error: () => this.status.set('error'),
+      error: () => {
+        this._formSubmission.setSubmitting(false);
+        this._formSubmission.setBanner("Couldn't load your profile, please try again later.");
+      },
     });
   }
 
