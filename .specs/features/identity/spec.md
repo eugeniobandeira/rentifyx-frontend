@@ -173,10 +173,11 @@ RentityX frontend has no authentication or session capability today — `src/app
 | IDENT-06 | P2: Forgot / reset password | Verified | Implemented (T3, T7, T17, T18, T20) — unaffected by the 2026-07-11 contract revision |
 | IDENT-07 | P2: View profile | Verified | Implemented (T2, T8, T19, T20) — unaffected by the 2026-07-11 contract revision |
 | IDENT-08 | P3: LGPD data export & account deletion | Verified | Implemented (T8, T9, T21) — unaffected by the 2026-07-11 contract revision |
+| IDENT-09 | Hardening: state ownership, routing/state decoupling, shared form-submission composable, listener cleanup | Verified | Found by a 2026-07-11 state-management audit (duplicated current-user/token state, `Router` calls inside `SessionService`, copy-pasted auth-page error-handling, `ThemeService` `matchMedia` listener leak). Implemented 2026-07-11 (H1–H12): full suite (125/125) + build (7 prerendered routes) + lint all green. Task breakdown: `.specs/features/identity/tasks.md` → "Hardening: State Ownership, Composable Extraction & Cleanup" |
 
 **ID format:** `IDENT-[NUMBER]`
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified → Needs rework
-**Coverage:** 8 total, 8 originally implemented across T1–T21. The 2026-07-11 `api-contracts.md` revision (httpOnly refresh-token cookie) requires rework of IDENT-03/IDENT-04's implementation; the other 6 requirements are unaffected. The previously-blocking token-storage decision (was blocking only T6) is now moot — resolved by the backend contract, not by us. See `.specs/features/identity/tasks.md` → "Migration: httpOnly Refresh-Token Cookie" for the concrete task breakdown.
+**Coverage:** 9 total, 8 originally implemented across T1–T21. The 2026-07-11 `api-contracts.md` revision (httpOnly refresh-token cookie) required rework of IDENT-03/IDENT-04's implementation (done, see Migration task list); the other 6 pre-existing requirements are unaffected. IDENT-09 is new, added after a state-management hardening audit — see the Hardening task list.
 
 ---
 

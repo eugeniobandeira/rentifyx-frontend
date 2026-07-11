@@ -1,7 +1,7 @@
 # Identity Tasks
 
 **Design**: `.specs/features/identity/design.md`
-**Status**: T1–T21 implemented (see `.specs/project/STATE.md`). Migration section below (M1–M4, httpOnly refresh-cookie contract revision) implemented and verified 2026-07-11 — full suite (91/92, sole failure pre-existing/unrelated) + build green. Uncommitted, per `CLAUDE.md`'s Git policy (commits only on explicit request).
+**Status**: T1–T21 implemented (see `.specs/project/STATE.md`). Migration section (M1–M4, httpOnly refresh-cookie contract revision) implemented and verified 2026-07-11 — full suite (91/92, sole failure pre-existing/unrelated) + build green. Hardening section (H1–H12, state ownership/routing decoupling/composable extraction/listener cleanup) implemented and verified 2026-07-11 — full suite (125/125, the previously-known `app.spec.ts` failure no longer exists — superseded by an earlier router-outlet-based test), build green (7 prerendered routes), lint green. Uncommitted, per `CLAUDE.md`'s Git policy (commits only on explicit request).
 
 ---
 
@@ -807,3 +807,340 @@ M2 [P] ─┼──→ M3 ──→ M4
 ## Migration Test Coverage Note
 
 Since this backend now sets real cookies, the **manual smoke check** for M4 requires a running backend that actually implements the revised contract (issues the `Set-Cookie` header, honors `withCredentials`, enforces `SameSite=Strict`/CORS with the exact frontend origin). Automated unit tests mock `AuthService`/`HttpClient` and don't exercise real cookie behavior — a manual/E2E check against a real backend is the only way to catch a CORS or cookie-attribute misconfiguration (e.g. frontend origin not matching `Cors:AllowedOrigins` exactly, which would silently drop the cookie). Flag this explicitly since automated coverage cannot fully verify this migration's core premise.
+
+---
+
+# Hardening: State Ownership, Composable Extraction & Cleanup (2026-07-11)
+
+**Trigger**: A state-management audit of the implemented identity feature (T1–T21 + M1–M4) found six issues, none of them contract-breaking but all worth fixing before more features build on top of this pattern: (1) `AccountPage` keeps its own copy of the current user instead of reading `SessionService.currentUser`; (2) `TokenStorageService` keeps a dead in-memory `_accessToken` field/getter that `SessionService` never reads (the token's single real owner is `SessionService._accessTokenSignal`); (3) `SessionService.refresh()`/`logout()` call `Router.navigateByUrl()` from inside state-mutation methods, coupling state to routing and making the service hard to unit-test in isolation; (4) `isInvalid`/`fieldErrorMessage`/`_handleValidationError`/`submitting`/`banner`/`isRateLimit` are copy-pasted near-identically across `LoginPage`/`RegisterPage`/`ForgotPasswordPage`/`ResetPasswordPage` and have already drifted (`RegisterPage` handles a `pattern` validation case `ForgotPasswordPage` doesn't); (5) `AccountPage` uses a separate `status: 'loading'|'loaded'|'error'` vocabulary for the same submitting/error concept the four auth pages already standardized on; (6) `ThemeService._watchSystemPreference()` registers a `matchMedia` `'change'` listener with `addEventListener` and never removes it — a real (if low-impact, since it's a root singleton) memory leak with no established cleanup convention to copy from elsewhere in the codebase.
+
+**Scope**: Confirmed via direct file reads (not grep-only) of every file this section touches — `session.service.ts`, `token-storage.service.ts`, `theme.service.ts`, `account.ts`, and all four auth page components (`login.ts`, `register.ts`, `forgot-password.ts`, `reset-password.ts`). `SessionService.logout()` currently has **zero callers** anywhere in the app (no logout button exists in any template) — out of scope to add one here, but flagged since it means the `Router` side-effect removed from `logout()` in H3 has no behavioral impact today, only `refresh()`'s does.
+
+**Requirement**: IDENT-09 (new — see `spec.md` traceability table)
+
+```
+H1 [P] ─┐
+H2 [P] ─┤
+H5 [P] ─┼──→ H3 ──→ H4 ─┐
+        │               ├──→ H10 ──→ H11 ──→ H12
+        └──→ H6[P],H7[P],H8[P],H9[P] ─┘
+```
+
+(H1, H2 are independent leaves feeding only H12. H5 gates H6–H9 and, together with H3, gates H10.)
+
+---
+
+### H1: `TokenStorageService` — remove the dead access-token field [P]
+
+**What**: Delete `_accessToken`, `getAccessToken()`, and the `setSession()`/`clear()` lines that touch it. `SessionService` never calls `getAccessToken()` — it keeps its own `_accessTokenSignal` and only ever calls `_tokenStorage.setSession()`/`.clear()` for the `email` side. `TokenStorageService` becomes email-persistence-only; update its class doc comment to say so plainly (the existing comment already explains the token is memory-only/never persisted, but still implies the service holds it — correct that). `setSession(accessToken: string, email: string)` keeps its two-arg signature unless callers only need `email` — check `SessionService._applySession`'s call site before deciding whether to narrow the signature to `setSession(email: string)`; narrowing is preferred if `accessToken` is provably unused after this change, but don't narrow if it turns out something else still reads it.
+
+**Where**:
+- `src/app/features/identity/auth/session/services/token-storage.service.ts` (modify)
+- `src/app/features/identity/auth/session/services/token-storage.service.spec.ts` (modify — drop `accessToken` get/set assertions)
+- `src/app/features/identity/auth/session/services/session.service.ts` (modify only if `setSession`'s signature narrows)
+
+**Depends on**: None
+**Reuses**: existing `PLATFORM_ID`/`DOCUMENT` guard pattern already in the file (unchanged)
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `TokenStorageService` has no field or method that stores/returns an access token
+- [ ] `SessionService` still compiles and owns the access token exclusively via `_accessTokenSignal`
+- [ ] `ng test --include='**/token-storage.service.spec.ts'` passes
+- [ ] `ng test --include='**/session.service.spec.ts'` passes (no regression from the signature check)
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/token-storage.service.spec.ts' --include='**/session.service.spec.ts'`
+
+---
+
+### H2: `ThemeService` — fix the `matchMedia` listener leak [P]
+
+**What**: `_watchSystemPreference()` calls `mediaQuery?.addEventListener('change', ...)` with no corresponding `removeEventListener`. Fix by injecting `DestroyRef` and registering `mediaQuery?.removeEventListener('change', handler)` in `destroyRef.onDestroy(...)` — this is the standard Angular cleanup primitive for a `providedIn: 'root'` service reacting to a native browser API, and (since no listener/subscription cleanup convention exists anywhere else in this codebase yet) becomes the reference example future services should copy. Keep the named handler function (not an inline arrow) so the same reference can be passed to both `addEventListener` and `removeEventListener`.
+
+**Where**:
+- `src/app/core/services/theme.service.ts` (modify)
+- `src/app/core/services/theme.service.spec.ts` (modify — add a test asserting `removeEventListener` is called with the same handler on service destruction, e.g. via `TestBed.inject(DestroyRef)`-driven teardown or `fixture.destroy()`/`TestBed.resetTestingModule()` depending on how the existing spec constructs the service)
+
+**Depends on**: None
+**Reuses**: N/A — first use of `DestroyRef` in the codebase; keep it minimal, don't introduce a wrapper/composable for a single call site
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `addEventListener`'s handler is a named function reused for `removeEventListener`
+- [ ] `removeEventListener` is called exactly once when the service is destroyed
+- [ ] Existing dark-mode/system-preference behavior is unchanged (all current `theme.service.spec.ts` assertions still pass)
+- [ ] `ng test --include='**/theme.service.spec.ts'` passes, including the new cleanup test
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/theme.service.spec.ts'`
+
+---
+
+### H3: `SessionService` — remove `Router` side effects from state mutation
+
+**What**: Delete the two `void this._router.navigateByUrl('/login')` calls inside `refresh()`'s `catchError` and `logout()`. `SessionService` stops injecting `Router` entirely. State mutation (`clearSession()`) is all `refresh()`/`logout()` do now; navigation becomes the caller's responsibility (see H4 for where it moves). Also add `updateCurrentUser(user: iUserResponse): void` — a small setter for `_currentUserSignal` that callers use to sync freshly-fetched profile data into the session's single source of truth (needed by H10) without going through a full `login()`/`refresh()` cycle.
+
+**Where**:
+- `src/app/features/identity/auth/session/services/session.service.ts` (modify)
+- `src/app/features/identity/auth/session/services/session.service.spec.ts` (modify — remove `Router`/`navigateByUrl` mocks and assertions from the `refresh()`-failure and `logout()` tests; add a test for `updateCurrentUser()`)
+
+**Depends on**: None
+**Reuses**: existing `_applySession`/`clearSession` structure, existing `shareReplay`-based dedup (unchanged)
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `SessionService` no longer imports or injects `Router`
+- [ ] `refresh()`/`logout()` only mutate state (via `clearSession()`/`_applySession()`) — no navigation call anywhere in the file
+- [ ] `updateCurrentUser(user)` sets `_currentUserSignal` and is covered by a test
+- [ ] `ng test --include='**/session.service.spec.ts'` passes
+- [ ] Test count: unchanged or higher, none silently dropped (only the now-irrelevant `Router` assertions are removed, not the whole test case)
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/session.service.spec.ts'`
+
+---
+
+### H4: `App` — signal-driven redirect on session end
+
+**What**: `SessionService.isAuthenticated` already flips to `false` whenever `clearSession()` runs (via H3's now-navigation-free `refresh()`/`logout()`, and via `AccountPage.deleteAccount()`'s existing direct call). Add an `effect()` in `App`'s constructor that watches `isAuthenticated()` and calls `this._router.navigateByUrl('/login')` on a `true → false` transition — skip the transition check while `isRestoringSession()` is `true` (the initial bootstrap correctly starts unauthenticated; that's not a "session end", it's a session that was never restored) and skip the very first effect run (Angular runs a new `effect()` once immediately; there's no prior "true" to transition from). Track "was previously authenticated" with a plain local variable closed over by the effect, matching how `_refreshTimer` etc. are held as plain instance fields elsewhere in this codebase — no need for a second signal. This centralizes the one remaining navigation side-effect at the app's composition root instead of leaving it caller-scattered, and is the first real use of Angular's `effect()` in the codebase (mirrors the cleanup precedent set in H2, but for reacting to signal changes rather than a native listener).
+
+**Where**:
+- `src/app/app.ts` (modify — inject `Router`, add the `effect()`)
+- `src/app/app.spec.ts` (modify only if the new effect requires a `Router`/`SessionService` mock the existing tests don't already provide — check first; the existing `isRestoringSession` wiring already needed comparable setup)
+
+**Depends on**: H3
+**Reuses**: existing `isRestoringSession`/`isAuthenticated` signals, existing `bootstrap()` call site in the constructor
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] A background `refresh()` failure (proactive timer or interceptor-triggered) now redirects to `/login` via `App`'s effect, not from inside `SessionService`
+- [ ] No redirect fires on initial app load for an anonymous visitor (no prior `true` to transition from)
+- [ ] No redirect fires while `isRestoringSession()` is `true`
+- [ ] `AccountPage.deleteAccount()`'s existing direct `clearSession()` + `navigateByUrl('/login')` still works (the effect firing a second, idempotent `navigateByUrl('/login')` alongside it is acceptable — same destination, no user-visible difference; do not special-case it)
+- [ ] `ng test --include='**/app.spec.ts'` passes
+- [ ] `npm run build` succeeds
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/app.spec.ts'`
+
+---
+
+### H5: Create `shared/composables/use-form-submission.ts` [P]
+
+**What**: First file in `shared/composables/` (folder doesn't exist yet — CLAUDE.md has documented this convention since the identity feature was planned, but nothing has used it until now). Extract the state and logic duplicated across `LoginPage`/`RegisterPage`/`ForgotPasswordPage`/`ResetPasswordPage`:
+1. `submitting`, `banner`, `isRateLimit` signals (readonly-exposed the same way `SessionService` exposes its state).
+2. `reset(): void` — clears `banner`/`isRateLimit`, called at the top of every `onSubmit()`.
+3. `fieldErrorMessage(control: AbstractControl | null): string` — the `required`/`email`/`maxlength`/`minlength`/`pattern`/`server` message ladder. Union the superset actually used across all four components (register's `pattern` case included) rather than the lowest common denominator — a component that never triggers `pattern` on its own controls simply never hits that branch, which is safe and removes the drift the audit found.
+4. `isInvalid(control: AbstractControl | null): boolean` — the `invalid && (dirty || touched)` check.
+5. `applyValidationErrors(error: iClassifiedHttpError, form: FormGroup, fieldNames: readonly string[]): string[]` — for a `kind: 'validation'` error, matches each server field name against `fieldNames` case-insensitively, calls `setErrors({ server: ... })` + `markAsTouched()` on matched controls, and returns the array of messages for fields that matched nothing (the "summary" list `RegisterPage` shows and the other three currently drop on the floor).
+6. `handleError(error: iClassifiedHttpError, form: FormGroup, fieldNames: readonly string[]): string[]` — orchestrates: validation-kind delegates to `applyValidationErrors`; everything else sets `isRateLimit`/`banner` from `error.kind`/`error.message`. Returns the same unmatched-summary array as `applyValidationErrors` (empty for non-validation errors), so every caller can adopt the summary display uniformly if it chooses to.
+
+Callers that need a branch `handleError` can't express (e.g. `ResetPasswordPage`'s `bad-request`/`not-found` → `invalid-link` viewState transition) still write their own `_handleError` wrapper that checks that one case first, then calls `useFormSubmission()`'s `handleError` for everything else — the composable is a toolkit, not a rigid controller, matching how `create<Name>FormControl()` composes rather than owns the whole component.
+
+**Where**:
+- `src/app/shared/composables/use-form-submission.ts` (new)
+- `src/app/shared/composables/use-form-submission.spec.ts` (new)
+
+**Depends on**: None
+**Reuses**: `iClassifiedHttpError` (`@shared/interfaces/classified-http-error`), Angular's `AbstractControl`/`FormGroup` types — no new dependencies
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `useFormSubmission()` is a plain function (not a class), matching the "composable" naming/shape convention CLAUDE.md documents, callable as a component field initializer (valid injection-context-free — this composable injects nothing, so it works even outside DI context)
+- [ ] `submitting`/`banner`/`isRateLimit` are exposed readonly (`.asReadonly()`), with separate internal setters the composable's own methods use
+- [ ] `fieldErrorMessage` covers `server`/`required`/`email`/`maxlength`/`minlength`/`pattern`, falling back to a generic "This field is invalid." message, exactly matching the union of all four existing components' branches (verified by comparing against the four files read during this audit)
+- [ ] `applyValidationErrors` returns unmatched messages instead of silently dropping them (fixes the gap where `ForgotPasswordPage`/`ResetPasswordPage` currently ignore unmatched server validation errors)
+- [ ] `ng test --include='**/use-form-submission.spec.ts'` passes
+- [ ] Test count: at least 8 (submitting/banner/isRateLimit toggle via reset+handleError, each fieldErrorMessage branch, isInvalid true/false, applyValidationErrors matched+unmatched cases)
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/use-form-submission.spec.ts'`
+
+---
+
+### H6: Migrate `LoginPage` to `useFormSubmission` [P]
+
+**What**: Replace the component's own `banner`/`submitting`/`isRateLimit` signals and `_handleError` with `useFormSubmission()`. `LoginPage` has no per-field validation-error mapping today (its `_handleError` just sets banner/rate-limit), so this is the simplest of the four migrations — mostly deletion.
+
+**Where**:
+- `src/app/features/identity/auth/login/components/login.ts` (modify)
+- `src/app/features/identity/auth/login/components/login.html` (modify only if template bindings to `banner`/`submitting`/`isRateLimit` need to reference the composable's return object instead of component fields — keep the same field names on the component by re-exposing them, e.g. `protected readonly formSubmission = useFormSubmission();` and update template bindings from `banner()` to `formSubmission.banner()` etc., OR keep flat re-exports (`readonly banner = this.formSubmission.banner;`) if that avoids template churn — prefer flat re-exports to minimize `.html` diffs)
+- `src/app/features/identity/auth/login/components/login.spec.ts` (modify only if it asserts on internals that moved)
+
+**Depends on**: H5
+**Reuses**: `use-form-submission.ts`
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `LoginPage` has no local `banner`/`submitting`/`isRateLimit` signal declarations — all sourced from `useFormSubmission()`
+- [ ] Existing login behavior (success navigation, error banner, rate-limit flag) is unchanged
+- [ ] `ng test --include='**/login.spec.ts'` passes with no dropped test cases
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/login.spec.ts'`
+
+---
+
+### H7: Migrate `RegisterPage` to `useFormSubmission` [P]
+
+**What**: Replace `banner`/`submitting`/`isRateLimit`/`summaryErrors`, `isInvalid`, `fieldErrorMessage`, `_handleError`, `_handleValidationError` with `useFormSubmission()`. `summaryErrors` becomes the return value of `handleError`/`applyValidationErrors` instead of hand-rolled duplication of `applyValidationErrors`'s matching loop.
+
+**Where**:
+- `src/app/features/identity/auth/register/components/register.ts` (modify)
+- `src/app/features/identity/auth/register/components/register.html` (modify — update bindings per H6's flat-re-export approach)
+- `src/app/features/identity/auth/register/components/register.spec.ts` (modify only if it asserts on internals that moved)
+
+**Depends on**: H5
+**Reuses**: `use-form-submission.ts`, existing `FORM_FIELD_NAMES` constant (passed as `fieldNames` to `handleError`)
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `RegisterPage` has no local `isInvalid`/`fieldErrorMessage`/`_handleError`/`_handleValidationError` implementations — all delegate to `useFormSubmission()`
+- [ ] The `pattern` validation-message case still fires correctly (this is the case that motivated including it in H5's union)
+- [ ] `ng test --include='**/register.spec.ts'` passes with no dropped test cases
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/register.spec.ts'`
+
+---
+
+### H8: Migrate `ForgotPasswordPage` to `useFormSubmission` [P]
+
+**What**: Same migration as H7, for `ForgotPasswordPage`. Note this component's current `_handleValidationError` silently drops unmatched server validation errors (no summary display) — after migration it receives `applyValidationErrors`'s unmatched-message array; decide whether to surface it (add a summary UI element, consistent with `RegisterPage`) or intentionally ignore the return value with a comment explaining why. Prefer surfacing it — dropping validation feedback the backend sent is a latent UX bug, not a deliberate design choice, per the audit.
+
+**Where**:
+- `src/app/features/identity/auth/forgot-password/components/forgot-password.ts` (modify)
+- `src/app/features/identity/auth/forgot-password/components/forgot-password.html` (modify — add summary-errors display if adopted, matching `RegisterPage`'s existing markup/`data-testid` pattern)
+- `src/app/features/identity/auth/forgot-password/components/forgot-password.spec.ts` (modify)
+
+**Depends on**: H5
+**Reuses**: `use-form-submission.ts`, existing `FORM_FIELD_NAMES` constant, `RegisterPage`'s summary-error markup as a template reference if adopted
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `ForgotPasswordPage` has no local `isInvalid`/`fieldErrorMessage`/`_handleError`/`_handleValidationError` implementations
+- [ ] A decision on unmatched-validation-message display is made and applied consistently (not silently left unhandled)
+- [ ] `ng test --include='**/forgot-password.spec.ts'` passes with no dropped test cases
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/forgot-password.spec.ts'`
+
+---
+
+### H9: Migrate `ResetPasswordPage` to `useFormSubmission` [P]
+
+**What**: Same migration, adapted for `ResetPasswordPage`'s two extra wrinkles: (a) it has only one form control (`newPassword`), so `isInvalid()`/`fieldErrorMessage()` become thin no-arg wrappers calling the composable's versions with `this.form.get('newPassword')`; (b) its `_handleError` must keep its own first branch (`bad-request`/`not-found` → `viewState.set('invalid-link')`) before falling through to `useFormSubmission()`'s `handleError` for everything else, per H5's "toolkit, not controller" design; (c) its existing `_handleValidationError` has a fallback generic banner ("Something went wrong, try again") when no `newPassword`-keyed message is found — decide whether that's still needed once `applyValidationErrors`'s unmatched-summary return value is available, or whether it's now redundant with a summary display.
+
+**Where**:
+- `src/app/features/identity/auth/reset-password/components/reset-password.ts` (modify)
+- `src/app/features/identity/auth/reset-password/components/reset-password.html` (modify only if a summary display is added)
+- `src/app/features/identity/auth/reset-password/components/reset-password.spec.ts` (modify)
+
+**Depends on**: H5
+**Reuses**: `use-form-submission.ts`
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `ResetPasswordPage` has no local `fieldErrorMessage`/duplicate validation-ladder logic — delegates to `useFormSubmission()`
+- [ ] The `bad-request`/`not-found` → `invalid-link` branch still fires correctly (this is the one case `useFormSubmission()` deliberately does not own)
+- [ ] `ng test --include='**/reset-password.spec.ts'` passes with no dropped test cases
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/reset-password.spec.ts'`
+
+---
+
+### H10: `AccountPage` — single source of truth + composable adoption
+
+**What**: Two changes to the same file, done together since both touch the same signals:
+1. Delete the local `user = signal<iUserResponse | null>(null)`. Read `SessionService.currentUser` directly for display. After `_userService.getMe()` resolves, call `this._sessionService.updateCurrentUser(user)` (from H3) instead of setting a local copy — this is also what keeps `SessionService.currentUser` fresh after a profile fetch, which nothing currently does.
+2. Replace the `status: 'loading'|'loaded'|'error'` signal with `useFormSubmission()`'s `submitting`/`banner` vocabulary (from H5) for the `getMe()` load itself, so all five identity-feature components (four auth pages + this one) speak the same loading/error vocabulary. `exporting`/`exportBanner` and `deleting`/`deleteBanner` (the two LGPD actions) can either stay as dedicated local signals (they're not form submissions, `useFormSubmission()` is form-shaped) or become two more `useFormSubmission()` instances if that reads more consistently — pick whichever keeps the template simplest; both are acceptable, this is not a hard requirement, just don't leave the third (`status`) vocabulary in place.
+
+**Where**:
+- `src/app/features/identity/user/pages/account/account.ts` (modify)
+- `src/app/features/identity/user/pages/account/account.html` (modify — update bindings for whichever signals are renamed/removed)
+- `src/app/features/identity/user/pages/account/account.spec.ts` (modify)
+
+**Depends on**: H3, H5
+**Reuses**: `SessionService.currentUser`/`updateCurrentUser()`, `use-form-submission.ts`
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `AccountPage` has no local `user` signal — template reads `SessionService.currentUser()` (injected, exposed as a protected field)
+- [ ] `updateCurrentUser()` is called after a successful `getMe()`
+- [ ] The `status: 'loading'|'loaded'|'error'` type and signal no longer exist
+- [ ] `ng test --include='**/account.spec.ts'` passes with no dropped test cases
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/account.spec.ts'`
+
+---
+
+### H11: Update `CLAUDE.md`
+
+**What**: Document the patterns this hardening pass establishes, so future features follow them instead of re-diverging:
+- Add `shared/composables/use-form-submission.ts` as the first concrete example under the existing `composables/` bullet in the Folder convention section (currently only names hypothetical examples).
+- Add a short note to the "Guards and async app state" section (or a new adjacent bullet) about the `DestroyRef`-based cleanup convention for native listeners (`ThemeService`'s `matchMedia` fix, H2) and the `effect()`-based convention for reacting to cross-service signal changes at the composition root (`App`'s session-end redirect, H4).
+- Note in the `SessionService` description (wherever `_API_URL`/session state is currently documented) that it is the sole owner of both the access token and the current-user object — `TokenStorageService` persists only `email`; nothing else should keep a parallel copy of user/session data (point at `updateCurrentUser()` as the sanctioned way to refresh it).
+
+**Where**:
+- `CLAUDE.md` (modify)
+
+**Depends on**: H1–H10 (documents the landed state, written last so it doesn't describe an aspirational design that changed mid-implementation)
+**Reuses**: N/A
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `composables/` bullet references `use-form-submission.ts` as a real, existing example
+- [ ] Cleanup conventions (`DestroyRef` for listeners, `effect()` for cross-service reactions) are documented with their concrete file references
+- [ ] `SessionService`'s single-source-of-truth responsibility (token + current user) is stated explicitly
+
+**Tests**: none (documentation)
+**Gate**: none
+
+---
+
+### H12: Full suite + build gate
+
+**What**: Run the complete verification pipeline after all H1–H11 changes land, matching how the original T-series and M-series phases were closed out.
+
+**Where**: N/A (verification only)
+
+**Depends on**: H1–H11
+**Requirement**: IDENT-09
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `npm test` passes in full (same known baseline: only the pre-existing unrelated `app.spec.ts` "should render title" failure, if it's still unfixed — do not let any *new* failure hide behind that baseline)
+- [ ] `npm run build` succeeds (client + server bundles)
+- [ ] `npm run lint` passes with no new violations
+- [ ] Manual smoke check: log in, view/edit account (confirm profile data matches what login returned), reload while logged in (session restores via `bootstrap()`, no flash), let a token approach expiry or force a `401` (confirm redirect to `/login` still happens via `App`'s effect), export data, attempt delete-account cancel + confirm flows
+
+**Tests**: full suite
+**Gate**: full — `npm test && npm run build && npm run lint`
+
+**Commit**: `refactor(identity): fix state duplication, decouple routing from session state, extract shared form-submission composable, fix ThemeService listener leak`
