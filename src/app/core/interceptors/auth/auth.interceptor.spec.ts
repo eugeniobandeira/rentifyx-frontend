@@ -3,7 +3,7 @@ import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
 import { authInterceptor } from './auth.interceptor';
-import { SessionService } from '@features/identity/auth/session/services/session.service';
+import { SessionService } from '@features/identity/auth/session/services/session/session.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
 
 const user: iUserResponse = {

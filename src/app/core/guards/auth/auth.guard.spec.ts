@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, provideRouter, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { firstValueFrom, Observable } from 'rxjs';
-import { SessionService } from '@features/identity/auth/session/services/session.service';
+import { SessionService } from '@features/identity/auth/session/services/session/session.service';
 import { authGuard } from './auth.guard';
 
 describe('authGuard', () => {

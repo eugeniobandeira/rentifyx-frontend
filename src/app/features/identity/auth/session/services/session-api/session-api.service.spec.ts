@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { SessionApiService } from './session-api.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
-import { iAuthTokenResponse } from '../interfaces/auth-token-response';
+import { iAuthTokenResponse } from '../../interfaces/auth-token-response';
 
 const AUTH_BASE_URL = 'http://localhost:5000/api/v1/auth';
 

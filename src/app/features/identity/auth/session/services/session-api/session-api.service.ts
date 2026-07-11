@@ -2,9 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '@app/environment/environment';
-import { iAuthTokenResponse } from '../interfaces/auth-token-response';
-import { iRefreshRequest } from '../interfaces/refresh-request';
-import { iLogoutRequest } from '../interfaces/logout-request';
+import { iAuthTokenResponse } from '../../interfaces/auth-token-response';
+import { iRefreshRequest } from '../../interfaces/refresh-request';
+import { iLogoutRequest } from '../../interfaces/logout-request';
 
 const WITH_CREDENTIALS = { withCredentials: true };
 

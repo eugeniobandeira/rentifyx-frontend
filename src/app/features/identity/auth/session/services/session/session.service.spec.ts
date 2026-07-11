@@ -2,11 +2,11 @@ import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { LoginService } from '@features/identity/auth/login/services/login.service';
-import { iAuthTokenResponse } from '../interfaces/auth-token-response';
+import { iAuthTokenResponse } from '../../interfaces/auth-token-response';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
 import { SessionService } from './session.service';
-import { SessionApiService } from './session-api.service';
-import { TokenStorageService } from './token-storage.service';
+import { SessionApiService } from '../session-api/session-api.service';
+import { TokenStorageService } from '../token-storage/token-storage.service';
 
 const user: iUserResponse = {
   id: 'user-1',

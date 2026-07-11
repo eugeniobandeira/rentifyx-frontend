@@ -4,10 +4,10 @@ import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError
 import { decodeJwtExpiry } from '@shared/utils/decode-jwt-expiry.util';
 import { LoginService } from '@features/identity/auth/login/services/login.service';
 import { iLoginRequest } from '@features/identity/auth/login/interfaces/login-request';
-import { iAuthTokenResponse } from '../interfaces/auth-token-response';
+import { iAuthTokenResponse } from '../../interfaces/auth-token-response';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
-import { SessionApiService } from './session-api.service';
-import { TokenStorageService } from './token-storage.service';
+import { SessionApiService } from '../session-api/session-api.service';
+import { TokenStorageService } from '../token-storage/token-storage.service';
 
 const REFRESH_SAFETY_MARGIN_MS = 60_000;
 

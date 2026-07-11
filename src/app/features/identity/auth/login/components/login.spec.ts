@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { SessionService } from '@features/identity/auth/session/services/session.service';
+import { SessionService } from '@features/identity/auth/session/services/session/session.service';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
 import { LoginPage } from './login';

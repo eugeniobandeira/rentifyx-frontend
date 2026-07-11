@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { SessionService } from '@features/identity/auth/session/services/session.service';
+import { SessionService } from '@features/identity/auth/session/services/session/session.service';
 import { UserService } from '@features/identity/user/services/user.service';
 import { useFormSubmission } from '@shared/composables/use-form-submission';
 
