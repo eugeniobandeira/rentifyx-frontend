@@ -28,7 +28,6 @@ describe('getCategorySlot', () => {
 
     expect(result.slot).toBeGreaterThanOrEqual(1);
     expect(result.slot).toBeLessThanOrEqual(8);
-    // same slug must always resolve to the same slot (no token growth, no flicker)
     expect(getCategorySlot('underwater-basket-weaving')).toEqual(result);
   });
 });
