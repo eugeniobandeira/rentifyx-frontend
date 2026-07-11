@@ -3,17 +3,23 @@ import { ThemeService } from './theme.service';
 
 const STORAGE_KEY = 'rentityx-color-scheme';
 
-function mockMatchMedia(matches: boolean): void {
+function mockMatchMedia(matches: boolean): {
+  addEventListener: ReturnType<typeof vi.fn>;
+  removeEventListener: ReturnType<typeof vi.fn>;
+} {
+  const addEventListener = vi.fn();
+  const removeEventListener = vi.fn();
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     configurable: true,
     value: (query: string) => ({
       matches,
       media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
+      addEventListener,
+      removeEventListener,
     }),
   });
+  return { addEventListener, removeEventListener };
 }
 
 describe('ThemeService', () => {
@@ -56,5 +62,19 @@ describe('ThemeService', () => {
 
     service.toggle();
     expect(service.isDark()).toBe(false);
+  });
+
+  it('removes the matchMedia change listener when the service is destroyed', () => {
+    const { addEventListener, removeEventListener } = mockMatchMedia(false);
+    TestBed.configureTestingModule({});
+
+    TestBed.inject(ThemeService);
+
+    expect(addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
+    const registeredHandler = addEventListener.mock.calls[0][1];
+
+    TestBed.resetTestingModule();
+
+    expect(removeEventListener).toHaveBeenCalledWith('change', registeredHandler);
   });
 });

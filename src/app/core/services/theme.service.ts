@@ -1,5 +1,5 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { ColorSchemeMode } from '@core/types/color-scheme-mode';
 
 const STORAGE_KEY = 'rentityx-color-scheme';
@@ -8,6 +8,7 @@ const STORAGE_KEY = 'rentityx-color-scheme';
 export class ThemeService {
   private readonly _document = inject(DOCUMENT);
   private readonly _isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly _destroyRef = inject(DestroyRef);
 
   private readonly _mode = signal<ColorSchemeMode>(this._readStoredMode());
   private readonly _systemPrefersDark = signal(this._readSystemPreference());
@@ -53,12 +54,15 @@ export class ThemeService {
 
   private _watchSystemPreference(): void {
     const mediaQuery = this._document.defaultView?.matchMedia('(prefers-color-scheme: dark)');
-    mediaQuery?.addEventListener('change', (event) => {
+    const handleChange = (event: MediaQueryListEvent): void => {
       this._systemPrefersDark.set(event.matches);
       if (this._mode() === 'system') {
         this._applyToDocument(this.isDark());
       }
-    });
+    };
+
+    mediaQuery?.addEventListener('change', handleChange);
+    this._destroyRef.onDestroy(() => mediaQuery?.removeEventListener('change', handleChange));
   }
 
   private _applyToDocument(isDark: boolean): void {
