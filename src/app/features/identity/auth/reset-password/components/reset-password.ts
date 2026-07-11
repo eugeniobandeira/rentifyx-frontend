@@ -8,8 +8,11 @@ import {
   ResetPasswordFormGroup,
 } from '../constants/reset-password-form.config';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
+import { useFormSubmission } from '@shared/composables/use-form-submission';
 
 type ResetPasswordViewState = 'form' | 'success' | 'invalid-link';
+
+const FORM_FIELD_NAMES = ['newPassword'] as const;
 
 @Component({
   selector: 'app-reset-password',
@@ -26,11 +29,13 @@ export class ResetPasswordPage {
   private _token = '';
 
   readonly viewState = signal<ResetPasswordViewState>('form');
-  readonly submitting = signal(false);
-  readonly banner = signal<string | null>(null);
-  readonly isRateLimit = signal(false);
 
   readonly form: ResetPasswordFormGroup = createResetPasswordFormControl();
+
+  private readonly _formSubmission = useFormSubmission();
+  readonly banner = this._formSubmission.banner;
+  readonly submitting = this._formSubmission.submitting;
+  readonly isRateLimit = this._formSubmission.isRateLimit;
 
   constructor() {
     const email = this._route.snapshot.queryParamMap.get('email');
@@ -46,44 +51,22 @@ export class ResetPasswordPage {
   }
 
   isInvalid(): boolean {
-    const control = this.form.get('newPassword');
-    return !!control && control.invalid && (control.dirty || control.touched);
+    return this._formSubmission.isInvalid(this.form.get('newPassword'));
   }
 
   fieldErrorMessage(): string {
-    const control = this.form.get('newPassword');
-    const errors = control?.errors;
-    if (!errors) {
-      return '';
-    }
-    if (errors['server']) {
-      return errors['server'];
-    }
-    if (errors['required']) {
-      return 'This field is required.';
-    }
-    if (errors['maxlength']) {
-      return `Must be at most ${errors['maxlength'].requiredLength} characters.`;
-    }
-    if (errors['minlength']) {
-      return `Must be at least ${errors['minlength'].requiredLength} characters.`;
-    }
-    if (errors['pattern']) {
-      return 'Must contain uppercase, lowercase, a digit, and a symbol.';
-    }
-    return 'This field is invalid.';
+    return this._formSubmission.fieldErrorMessage(this.form.get('newPassword'));
   }
 
   onSubmit(): void {
-    this.banner.set(null);
-    this.isRateLimit.set(false);
+    this._formSubmission.reset();
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.submitting.set(true);
+    this._formSubmission.setSubmitting(true);
     const request: iResetPasswordRequest = {
       email: this._email,
       token: this._token,
@@ -92,42 +75,25 @@ export class ResetPasswordPage {
 
     this._resetPasswordService.resetPassword(request).subscribe({
       next: () => {
-        this.submitting.set(false);
+        this._formSubmission.setSubmitting(false);
         this.viewState.set('success');
       },
       error: (error: iClassifiedHttpError) => {
-        this.submitting.set(false);
+        this._formSubmission.setSubmitting(false);
         this._handleError(error);
       },
     });
   }
 
   private _handleError(error: iClassifiedHttpError): void {
-    if (error.kind === 'validation') {
-      this._handleValidationError(error);
-      return;
-    }
-
     if (error.kind === 'bad-request' || error.kind === 'not-found') {
       this.viewState.set('invalid-link');
       return;
     }
 
-    this.isRateLimit.set(error.kind === 'rate-limit');
-    this.banner.set(error.message);
-  }
-
-  private _handleValidationError(error: iClassifiedHttpError): void {
-    const errors = error.validationErrors ?? {};
-    const messages = errors['newPassword'] ?? errors['NewPassword'] ?? errors['newpassword'];
-
-    if (messages && messages.length > 0) {
-      const control = this.form.get('newPassword');
-      control?.setErrors({ server: messages.join(' ') });
-      control?.markAsTouched();
-      return;
+    const unmatched = this._formSubmission.handleError(error, this.form, FORM_FIELD_NAMES);
+    if (error.kind === 'validation' && unmatched.length > 0) {
+      this._formSubmission.setBanner('Something went wrong, try again');
     }
-
-    this.banner.set('Something went wrong, try again');
   }
 }

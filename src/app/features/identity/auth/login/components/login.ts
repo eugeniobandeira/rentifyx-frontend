@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
+import { useFormSubmission } from '@shared/composables/use-form-submission';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { createLoginFormControl, LoginFormGroup } from '../constants/login-form.config';
 
@@ -19,9 +20,10 @@ export class LoginPage {
 
   readonly form: LoginFormGroup = createLoginFormControl();
 
-  readonly banner = signal<string | null>(null);
-  readonly submitting = signal(false);
-  readonly isRateLimit = signal(false);
+  private readonly _formSubmission = useFormSubmission();
+  readonly banner = this._formSubmission.banner;
+  readonly submitting = this._formSubmission.submitting;
+  readonly isRateLimit = this._formSubmission.isRateLimit;
 
   onSubmit(): void {
     if (this.form.invalid) {
@@ -29,20 +31,19 @@ export class LoginPage {
       return;
     }
 
-    this.banner.set(null);
-    this.isRateLimit.set(false);
-    this.submitting.set(true);
+    this._formSubmission.reset();
+    this._formSubmission.setSubmitting(true);
 
     const { email, password } = this.form.getRawValue();
 
     this._sessionService.login({ email, password }).subscribe({
       next: () => {
-        this.submitting.set(false);
+        this._formSubmission.setSubmitting(false);
         this._navigateAfterLogin();
       },
       error: (error: iClassifiedHttpError) => {
-        this.submitting.set(false);
-        this._handleError(error);
+        this._formSubmission.setSubmitting(false);
+        this._formSubmission.handleError(error, this.form, ['email', 'password']);
       },
     });
   }
@@ -67,10 +68,5 @@ export class LoginPage {
       return false;
     }
     return true;
-  }
-
-  private _handleError(error: iClassifiedHttpError): void {
-    this.isRateLimit.set(error.kind === 'rate-limit');
-    this.banner.set(error.message);
   }
 }

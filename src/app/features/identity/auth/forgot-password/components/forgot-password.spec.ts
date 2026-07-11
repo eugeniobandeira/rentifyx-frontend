@@ -78,6 +78,23 @@ describe('ForgotPasswordPage', () => {
     expect(component.viewState()).toBe('form');
   });
 
+  it('422 on a field not rendered by the form collects into the summary banner', () => {
+    const component = configure();
+    const error = classifiedError({
+      kind: 'validation',
+      status: 422,
+      message: 'Validation failed',
+      correlationId: 'abc-123',
+      validationErrors: { someOtherField: ['This backend field is not on the form.'] },
+    });
+    forgotPasswordService.forgotPassword.mockReturnValue(throwError(() => error));
+
+    component.form.setValue(validFormValue);
+    component.onSubmit();
+
+    expect(component.summaryErrors()).toContain('This backend field is not on the form.');
+  });
+
   it('429 shows a generic rate-limit banner', () => {
     const component = configure();
     const error = classifiedError({

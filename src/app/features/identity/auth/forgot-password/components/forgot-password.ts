@@ -8,6 +8,7 @@ import {
   ForgotPasswordFormGroup,
 } from '../constants/forgot-password-form.config';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
+import { useFormSubmission } from '@shared/composables/use-form-submission';
 
 @Component({
   selector: 'app-forgot-password',
@@ -20,48 +21,33 @@ export class ForgotPasswordPage {
   private readonly _forgotPasswordService = inject(ForgotPasswordService);
 
   readonly viewState = signal<'form' | 'success'>('form');
-  readonly submitting = signal(false);
-  readonly banner = signal<string | null>(null);
-  readonly isRateLimit = signal(false);
+  readonly summaryErrors = signal<string[]>([]);
 
   readonly form: ForgotPasswordFormGroup = createForgotPasswordFormControl();
 
+  private readonly _formSubmission = useFormSubmission();
+  readonly banner = this._formSubmission.banner;
+  readonly submitting = this._formSubmission.submitting;
+  readonly isRateLimit = this._formSubmission.isRateLimit;
+
   isInvalid(controlName: (typeof FORM_FIELD_NAMES)[number]): boolean {
-    const control = this.form.get(controlName);
-    return !!control && control.invalid && (control.dirty || control.touched);
+    return this._formSubmission.isInvalid(this.form.get(controlName));
   }
 
   fieldErrorMessage(controlName: (typeof FORM_FIELD_NAMES)[number]): string {
-    const control = this.form.get(controlName);
-    const errors = control?.errors;
-    if (!errors) {
-      return '';
-    }
-    if (errors['server']) {
-      return errors['server'];
-    }
-    if (errors['required']) {
-      return 'This field is required.';
-    }
-    if (errors['email']) {
-      return 'Enter a valid email address.';
-    }
-    if (errors['maxlength']) {
-      return `Must be at most ${errors['maxlength'].requiredLength} characters.`;
-    }
-    return 'This field is invalid.';
+    return this._formSubmission.fieldErrorMessage(this.form.get(controlName));
   }
 
   onSubmit(): void {
-    this.banner.set(null);
-    this.isRateLimit.set(false);
+    this._formSubmission.reset();
+    this.summaryErrors.set([]);
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.submitting.set(true);
+    this._formSubmission.setSubmitting(true);
     const value = this.form.getRawValue();
     const request: iForgotPasswordRequest = {
       email: value.email,
@@ -69,38 +55,14 @@ export class ForgotPasswordPage {
 
     this._forgotPasswordService.forgotPassword(request).subscribe({
       next: () => {
-        this.submitting.set(false);
+        this._formSubmission.setSubmitting(false);
         this.viewState.set('success');
       },
       error: (error: iClassifiedHttpError) => {
-        this.submitting.set(false);
-        this._handleError(error);
+        this._formSubmission.setSubmitting(false);
+        const unmatched = this._formSubmission.handleError(error, this.form, FORM_FIELD_NAMES);
+        this.summaryErrors.set(unmatched);
       },
     });
-  }
-
-  private _handleError(error: iClassifiedHttpError): void {
-    if (error.kind === 'validation') {
-      this._handleValidationError(error);
-      return;
-    }
-
-    this.isRateLimit.set(error.kind === 'rate-limit');
-    this.banner.set(error.message);
-  }
-
-  private _handleValidationError(error: iClassifiedHttpError): void {
-    const errors = error.validationErrors ?? {};
-
-    for (const [field, messages] of Object.entries(errors)) {
-      const matchedControlName = FORM_FIELD_NAMES.find(
-        (name) => name.toLowerCase() === field.toLowerCase(),
-      );
-      if (matchedControlName) {
-        const control = this.form.get(matchedControlName);
-        control?.setErrors({ server: messages.join(' ') });
-        control?.markAsTouched();
-      }
-    }
   }
 }
