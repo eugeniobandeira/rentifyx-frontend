@@ -7,4 +7,10 @@ export interface iUserResponse {
   role: UserRole;
   status: UserStatus;
   createdAt: string;
+  essentialConsentGranted: boolean;
+  essentialConsentGivenAt: string | null;
+  essentialConsentRevokedAt: string | null;
+  marketingConsentGranted: boolean;
+  marketingConsentGivenAt: string | null;
+  marketingConsentRevokedAt: string | null;
 }

@@ -23,6 +23,7 @@ RentityX frontend has no authentication or session capability today — `src/app
 | Admin user management (list/create/edit/deactivate other users) | `api-contracts.md` only exposes `/users/me` (self-service). No admin user CRUD endpoints exist. |
 | Multi-factor authentication | Not present in `api-contracts.md`. |
 | Account lockout override / unlock UI | Contract states lockout is time-based (15 min, automatic) with no unlock endpoint — nothing to build beyond surfacing the message. |
+| Direct frontend integration with `rentifyx-communications-api` (notification status polling, channel-level Email/SMS/Push consent) | (2026-07-17) That service authenticates every endpoint with a static `X-Api-Key` header, explicitly not coupled to identity-api's JWT (its own docs, AD-011). Embedding that key in an Angular SPA would expose a service-to-service secret client-side. Its own consent model (per-channel opt-in) is also a distinct concept from identity-api's per-purpose consent (Essential/Marketing) below — the two are not interchangeable. Deferred until a BFF/proxy exists to hold the key server-side; identity-api's own consent endpoints (in scope, see IDENT-10) cover the LGPD consent surface this frontend actually needs today. |
 
 ---
 
@@ -150,6 +151,23 @@ RentityX frontend has no authentication or session capability today — `src/app
 
 ---
 
+### P2: Manage LGPD consent (Essential / Marketing)
+
+**User Story**: As a logged-in user, I want to view and change my Essential and Marketing consent status, so that I control what data processing I've agreed to, per LGPD Art. 8.
+
+**Why P2**: identity-api already tracks and returns this data (`GET/PUT /users/me/consent`, plus consent fields on `UserResponse`/`UserDataExportResponse`) — the frontend currently reads none of it (`iUserResponse`/`iDataExportResponse` silently drop all six consent fields the backend actually sends). Not required for the core auth loop, but a real contract gap in the already-shipped LGPD surface (IDENT-08).
+
+**Acceptance Criteria**:
+1. WHEN an authenticated user opens the account page THEN the system SHALL display current Essential and Marketing consent status (granted/not granted, with the given/revoked timestamp when present), sourced from `GET /users/me` (`UserResponse`'s six consent fields — `essentialConsentGranted`/`GivenAt`/`RevokedAt`, `marketingConsentGranted`/`GivenAt`/`RevokedAt`).
+2. WHEN the user toggles Marketing consent THEN the system SHALL call `PUT /users/me/consent` with `{ purpose: 'Marketing', granted: <bool> }` and update the displayed status from the response on `200`.
+3. WHEN the user attempts to toggle Essential consent off THEN the system SHALL allow the call (`purpose: 'Essential'` is a valid request per the backend validator) but SHALL warn before submitting that revoking Essential consent may affect core account functionality (the backend does not reject this call itself — see `context.md` if the exact warning copy needs deciding).
+4. WHEN `PUT /users/me/consent` returns `422` (invalid `purpose`) THEN the system SHALL show a generic error banner (this should not occur if the UI only ever sends `Essential`/`Marketing`, but the backend contract allows either).
+5. WHEN the data export (`GET /users/me/data-export`) is requested THEN the exported JSON SHALL include all consent fields (`essentialConsentGivenAt`, `essentialConsentRevokedAt`, `marketingConsentGranted`, `marketingConsentGivenAt`, `marketingConsentRevokedAt`) matching the backend's `UserDataExportResponse` exactly — today's `iDataExportResponse` collapses these into a single wrong `consentGivenAt` field and must be corrected.
+
+**Independent Test**: Log in, open the account page, toggle Marketing consent off then on, confirm each call updates the displayed timestamp; export data and confirm the downloaded JSON has the six-field consent shape, not the old single `consentGivenAt`.
+
+---
+
 ## Edge Cases
 
 - WHEN any `POST`/`DELETE` auth or user request returns `429` THEN the system SHALL show a rate-limit message ("too many attempts, try again shortly") rather than a generic error, across every form in this feature.
@@ -158,6 +176,7 @@ RentityX frontend has no authentication or session capability today — `src/app
 - WHEN two browser tabs are open and the user logs out in one THEN the other tab SHALL detect the cleared session on its next request/refresh attempt and also drop to logged-out (best-effort — no live cross-tab push mechanism is being built, see `context.md` deferred ideas).
 - WHEN `X-Correlation-Id` is present on an error response THEN it MAY be surfaced in developer-facing logs/console for support debugging, never shown as user-facing text.
 - WHEN the app is server-rendering (SSR) THEN no token storage or refresh logic SHALL execute on the server — session state resolves only in the browser after hydration.
+- WHEN `PUT /users/me/consent` succeeds but the response's consent fields differ from what the UI optimistically expected (e.g. a concurrent update in another tab) THEN the system SHALL render the response's actual values, never the optimistic ones.
 
 ---
 
@@ -174,10 +193,11 @@ RentityX frontend has no authentication or session capability today — `src/app
 | IDENT-07 | P2: View profile | Verified | Implemented (T2, T8, T19, T20) — unaffected by the 2026-07-11 contract revision |
 | IDENT-08 | P3: LGPD data export & account deletion | Verified | Implemented (T8, T9, T21) — unaffected by the 2026-07-11 contract revision |
 | IDENT-09 | Hardening: state ownership, routing/state decoupling, shared form-submission composable, listener cleanup | Verified | Found by a 2026-07-11 state-management audit (duplicated current-user/token state, `Router` calls inside `SessionService`, copy-pasted auth-page error-handling, `ThemeService` `matchMedia` listener leak). Implemented 2026-07-11 (H1–H12): full suite (125/125) + build (7 prerendered routes) + lint all green. Task breakdown: `.specs/features/identity/tasks.md` → "Hardening: State Ownership, Composable Extraction & Cleanup" |
+| IDENT-10 | P2: Manage LGPD consent (Essential/Marketing) + fix `iUserResponse`/`iDataExportResponse` contract drift | Verified | Found 2026-07-17 during a brownfield mapping of `rentifyx-identity-api`/`rentifyx-communications-api` for backend integration — frontend's `UserResponse`/`UserDataExportResponse` interfaces were missing all six consent fields the backend returns, and no `GET/PUT /users/me/consent` service existed. Implemented 2026-07-17 (C1–C6): full suite (136/136) + build (7 prerendered routes, client+server bundles) + lint all green. Task breakdown: `.specs/features/identity/tasks.md` → "Consent Alignment: Contract Fixes & Consent Management UI" |
 
 **ID format:** `IDENT-[NUMBER]`
 **Status values:** Pending → In Design → In Tasks → Implementing → Verified → Needs rework
-**Coverage:** 9 total, 8 originally implemented across T1–T21. The 2026-07-11 `api-contracts.md` revision (httpOnly refresh-token cookie) required rework of IDENT-03/IDENT-04's implementation (done, see Migration task list); the other 6 pre-existing requirements are unaffected. IDENT-09 is new, added after a state-management hardening audit — see the Hardening task list.
+**Coverage:** 10 total, 8 originally implemented across T1–T21. The 2026-07-11 `api-contracts.md` revision (httpOnly refresh-token cookie) required rework of IDENT-03/IDENT-04's implementation (done, see Migration task list); the other 6 pre-existing requirements are unaffected. IDENT-09 is new, added after a state-management hardening audit — see the Hardening task list. IDENT-10 is new, added after mapping the actual `rentifyx-identity-api`/`rentifyx-communications-api` backends against the shipped frontend — see the Consent Alignment task list.
 
 ---
 

@@ -4,8 +4,10 @@ import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { UserService } from '@features/identity/user/services/user.service';
+import { ConsentService } from '@features/identity/user/services/consent/consent.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
 import { iDataExportResponse } from '@features/identity/user/interfaces/data-export-response';
+import { iConsentResponse } from '@features/identity/user/interfaces/consent-response';
 import { AccountPage } from './account';
 
 const user: iUserResponse = {
@@ -14,6 +16,12 @@ const user: iUserResponse = {
   role: 'Renter',
   status: 'Active',
   createdAt: '2026-01-01T00:00:00Z',
+  essentialConsentGranted: true,
+  essentialConsentGivenAt: '2026-01-01T00:00:00Z',
+  essentialConsentRevokedAt: null,
+  marketingConsentGranted: false,
+  marketingConsentGivenAt: null,
+  marketingConsentRevokedAt: null,
 };
 
 const dataExport: iDataExportResponse = {
@@ -24,11 +32,25 @@ const dataExport: iDataExportResponse = {
   status: 'Active',
   createdAt: '2026-01-01T00:00:00Z',
   consentGivenAt: '2026-01-01T00:00:00Z',
+  essentialConsentRevokedAt: null,
+  marketingConsentGranted: false,
+  marketingConsentGivenAt: null,
+  marketingConsentRevokedAt: null,
   auditHistory: [],
+};
+
+const consent: iConsentResponse = {
+  essentialGranted: false,
+  essentialGrantedAt: null,
+  essentialRevokedAt: '2026-01-02T00:00:00Z',
+  marketingGranted: true,
+  marketingGrantedAt: '2026-01-02T00:00:00Z',
+  marketingRevokedAt: null,
 };
 
 describe('AccountPage', () => {
   let userService: { getMe: ReturnType<typeof vi.fn>; deleteMe: ReturnType<typeof vi.fn>; exportMyData: ReturnType<typeof vi.fn> };
+  let consentService: { updateConsent: ReturnType<typeof vi.fn> };
   let sessionService: {
     currentUser: ReturnType<typeof signal<iUserResponse | null>>;
     updateCurrentUser: ReturnType<typeof vi.fn>;
@@ -38,6 +60,7 @@ describe('AccountPage', () => {
 
   beforeEach(() => {
     userService = { getMe: vi.fn(), deleteMe: vi.fn(), exportMyData: vi.fn() };
+    consentService = { updateConsent: vi.fn() };
     const currentUserSignal = signal<iUserResponse | null>(null);
     sessionService = {
       currentUser: currentUserSignal,
@@ -52,6 +75,7 @@ describe('AccountPage', () => {
       imports: [AccountPage],
       providers: [
         { provide: UserService, useValue: userService },
+        { provide: ConsentService, useValue: consentService },
         { provide: SessionService, useValue: sessionService },
         { provide: Router, useValue: router },
       ],
@@ -145,5 +169,61 @@ describe('AccountPage', () => {
     component.deleteAccount();
 
     expect(userService.deleteMe).not.toHaveBeenCalled();
+  });
+
+  it('toggling Marketing consent calls updateConsent and reflects the response', () => {
+    userService.getMe.mockReturnValue(of(user));
+    consentService.updateConsent.mockReturnValue(of(consent));
+
+    const fixture = configure();
+    fixture.componentInstance.toggleMarketingConsent();
+
+    expect(consentService.updateConsent).toHaveBeenCalledWith('Marketing', true);
+    expect(sessionService.updateCurrentUser).toHaveBeenCalledWith({
+      ...user,
+      essentialConsentGranted: consent.essentialGranted,
+      essentialConsentGivenAt: consent.essentialGrantedAt,
+      essentialConsentRevokedAt: consent.essentialRevokedAt,
+      marketingConsentGranted: consent.marketingGranted,
+      marketingConsentGivenAt: consent.marketingGrantedAt,
+      marketingConsentRevokedAt: consent.marketingRevokedAt,
+    });
+  });
+
+  it('a failed consent toggle shows an error banner and leaves the displayed status unchanged', () => {
+    userService.getMe.mockReturnValue(of(user));
+    consentService.updateConsent.mockReturnValue(throwError(() => new Error('boom')));
+
+    const fixture = configure();
+    fixture.componentInstance.toggleMarketingConsent();
+
+    expect(fixture.componentInstance.consentBanner()).toBe("Couldn't update your consent, try again later.");
+    expect(sessionService.updateCurrentUser).toHaveBeenCalledTimes(1); // only the initial getMe() call
+  });
+
+  it('toggling Essential consent off asks for confirmation first and makes no call when cancelled', () => {
+    userService.getMe.mockReturnValue(of(user));
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
+
+    const fixture = configure();
+    fixture.componentInstance.toggleEssentialConsent();
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(consentService.updateConsent).not.toHaveBeenCalled();
+
+    confirmSpy.mockRestore();
+  });
+
+  it('toggling Essential consent off calls updateConsent when confirmed', () => {
+    userService.getMe.mockReturnValue(of(user));
+    consentService.updateConsent.mockReturnValue(of(consent));
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+
+    const fixture = configure();
+    fixture.componentInstance.toggleEssentialConsent();
+
+    expect(consentService.updateConsent).toHaveBeenCalledWith('Essential', false);
+
+    confirmSpy.mockRestore();
   });
 });

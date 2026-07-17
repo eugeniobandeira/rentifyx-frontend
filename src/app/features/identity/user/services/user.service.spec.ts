@@ -13,6 +13,12 @@ const user: iUserResponse = {
   role: 'Renter',
   status: 'Active',
   createdAt: '2026-01-01T00:00:00Z',
+  essentialConsentGranted: true,
+  essentialConsentGivenAt: '2026-01-01T00:00:00Z',
+  essentialConsentRevokedAt: null,
+  marketingConsentGranted: false,
+  marketingConsentGivenAt: null,
+  marketingConsentRevokedAt: null,
 };
 
 const dataExport: iDataExportResponse = {
@@ -23,6 +29,10 @@ const dataExport: iDataExportResponse = {
   status: 'Active',
   createdAt: '2026-01-01T00:00:00Z',
   consentGivenAt: '2026-01-01T00:00:00Z',
+  essentialConsentRevokedAt: null,
+  marketingConsentGranted: false,
+  marketingConsentGivenAt: null,
+  marketingConsentRevokedAt: null,
   auditHistory: [{ eventType: 'AccountCreated', occurredAt: '2026-01-01T00:00:00Z' }],
 };
 

@@ -1144,3 +1144,185 @@ Callers that need a branch `handleError` can't express (e.g. `ResetPasswordPage`
 **Gate**: full — `npm test && npm run build && npm run lint`
 
 **Commit**: `refactor(identity): fix state duplication, decouple routing from session state, extract shared form-submission composable, fix ThemeService listener leak`
+
+---
+
+## Consent Alignment: Contract Fixes & Consent Management UI
+
+Added 2026-07-17 after mapping the real `rentifyx-identity-api`/`rentifyx-communications-api` backends (see brownfield findings) against the shipped frontend. Two contract-drift bugs found in already-shipped code, plus a genuinely missing capability the backend has supported all along. `communications-api` integration is explicitly deferred — see the Out of Scope table in `spec.md` (its endpoints require a static `X-Api-Key` unsafe to embed client-side, and its consent model is per-channel, a different concept from identity-api's per-purpose consent handled here).
+
+### C1: Fix `iUserResponse` — add missing consent fields
+
+**What**: `UserResponse` (backend, `Application\Features\Identity\UserResponse.cs`) returns six consent fields the frontend interface silently drops today:
+```csharp
+bool EssentialConsentGranted, DateTimeOffset? EssentialConsentGivenAt, DateTimeOffset? EssentialConsentRevokedAt,
+bool MarketingConsentGranted, DateTimeOffset? MarketingConsentGivenAt, DateTimeOffset? MarketingConsentRevokedAt
+```
+Add all six to `iUserResponse` (camelCase, ASP.NET Core default JSON casing): `essentialConsentGranted: boolean`, `essentialConsentGivenAt: string | null`, `essentialConsentRevokedAt: string | null`, `marketingConsentGranted: boolean`, `marketingConsentGivenAt: string | null`, `marketingConsentRevokedAt: string | null`.
+
+**Where**:
+- `src/app/features/identity/user/interfaces/user-response.ts` (modify)
+- `src/app/features/identity/user/services/user.service.spec.ts` (modify — update any hardcoded mock `UserResponse` fixtures to include the new fields)
+
+**Depends on**: None
+**Reuses**: existing `iUserResponse` file/shape (extends, not a new file)
+**Requirement**: IDENT-10
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `iUserResponse` has all six consent fields with the exact names/types above
+- [ ] Every existing mock/fixture of `UserResponse` across the identity feature's specs is updated to include them (compile fails otherwise under `strict`)
+- [ ] `ng test --include='**/user.service.spec.ts'` passes
+- [ ] No `any`/optional-cast workaround introduced to paper over the missing fields
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/user.service.spec.ts'`
+
+---
+
+### C2: Fix `iDataExportResponse` — correct the consent shape
+
+**What**: The backend's `UserDataExportResponse` (`Application\Features\Identity\User\DataExport\UserDataExportResponse.cs`) does **not** mirror `UserResponse`'s consent field names — it has its own asymmetric shape:
+```csharp
+DateTimeOffset? ConsentGivenAt, DateTimeOffset? EssentialConsentRevokedAt,
+bool MarketingConsentGranted, DateTimeOffset? MarketingConsentGivenAt, DateTimeOffset? MarketingConsentRevokedAt
+```
+(note: plain `ConsentGivenAt`, not `EssentialConsentGivenAt` — this is a real backend naming inconsistency, not a frontend bug to "fix" by renaming; mirror it exactly). Today's `iDataExportResponse` already has a `consentGivenAt: string | null` field (correct, keep it) but is missing `essentialConsentRevokedAt`, `marketingConsentGranted`, `marketingConsentGivenAt`, `marketingConsentRevokedAt` entirely. Add those four.
+
+**Where**:
+- `src/app/features/identity/user/interfaces/data-export-response.ts` (modify)
+- `src/app/features/identity/user/services/user.service.spec.ts` (modify — update `UserDataExportResponse` mock fixtures)
+- `src/app/features/identity/user/pages/account/account.ts` (modify only if `_downloadJson` needs no change — verify it doesn't hardcode field names; it currently serializes the whole object generically, so likely untouched)
+
+**Depends on**: None
+**Reuses**: existing `iDataExportResponse` file/shape (extends, not a new file)
+**Requirement**: IDENT-10
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `iDataExportResponse` has `consentGivenAt`, `essentialConsentRevokedAt`, `marketingConsentGranted`, `marketingConsentGivenAt`, `marketingConsentRevokedAt` — exactly matching the backend's actual (asymmetric) field names, no invented symmetry with `iUserResponse`
+- [ ] `ng test --include='**/user.service.spec.ts'` passes
+- [ ] Exported JSON downloaded via `AccountPage.exportData()` includes all five consent-related fields
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/user.service.spec.ts'`
+
+---
+
+### C3: Create consent interfaces [P]
+
+**What**: New request/response shapes for `GET/PUT /users/me/consent`, one interface per file per convention. Backend's `ConsentResponse` (`Application\Features\Identity\User\Consent\ConsentResponse.cs`) uses yet another distinct naming scheme from both C1 and C2 (no `Consent` infix at all):
+```csharp
+bool EssentialGranted, DateTimeOffset? EssentialGrantedAt, DateTimeOffset? EssentialRevokedAt,
+bool MarketingGranted, DateTimeOffset? MarketingGrantedAt, DateTimeOffset? MarketingRevokedAt
+```
+and the `PUT` request body (`UpdateConsentApiRequest` in `Endpoints\Users\UpdateConsent.cs`):
+```csharp
+string Purpose, bool Granted   // Purpose: "Essential" | "Marketing"
+```
+
+Create:
+- `iConsentResponse`: `essentialGranted: boolean`, `essentialGrantedAt: string | null`, `essentialRevokedAt: string | null`, `marketingGranted: boolean`, `marketingGrantedAt: string | null`, `marketingRevokedAt: string | null`.
+- `iUpdateConsentRequest`: `purpose: ConsentPurpose`, `granted: boolean`.
+- `ConsentPurpose` type (union, sibling `types/` folder per the interfaces-vs-types convention): `'Essential' | 'Marketing'`.
+
+**Where**:
+- `src/app/features/identity/user/interfaces/consent-response.ts` (new)
+- `src/app/features/identity/user/interfaces/update-consent-request.ts` (new)
+- `src/app/features/identity/user/types/consent-purpose.ts` (new)
+
+**Depends on**: None
+**Reuses**: existing `user/interfaces/` and `user/types/` folders (siblings to `user-response.ts`, `user-role.ts`)
+**Requirement**: IDENT-10
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] Three new files exist, one shape each, matching the backend field names/casing exactly
+- [ ] `iUpdateConsentRequest.purpose` is typed `ConsentPurpose`, not a bare `string`
+- [ ] `npm run build` succeeds (no consumers yet, but confirms the files compile standalone)
+
+**Tests**: none (types only)
+**Gate**: none
+
+---
+
+### C4: Create `ConsentService`
+
+**What**: New service under the `user` entity. Since `user/services/` already has `user.service.ts` (the entity's primary service, stays flat) and this is a second, distinctly-named service, it gets its own subfolder per the "entity services folder is never a flat bag past one file" convention. Uses `HttpClient` directly (not `BaseHttpService`) — same Bearer-token GET/PUT pattern as `UserService`, not the cookie-based single-POST auth pattern `BaseHttpService` was built for.
+```ts
+getConsent(): Observable<iConsentResponse>          // GET  ${environment.apiUrl}/users/me/consent
+updateConsent(purpose: ConsentPurpose, granted: boolean): Observable<iConsentResponse>  // PUT ${environment.apiUrl}/users/me/consent
+```
+
+**Where**:
+- `src/app/features/identity/user/services/consent/consent.service.ts` (new)
+- `src/app/features/identity/user/services/consent/consent.service.spec.ts` (new)
+
+**Depends on**: C3
+**Reuses**: `iConsentResponse`, `iUpdateConsentRequest`, `ConsentPurpose` from C3; same `_API_URL` class-field pattern as `UserService`
+**Requirement**: IDENT-10
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `ConsentService` is `providedIn: 'root'`, injects `HttpClient` directly (matches `UserService`, not `BaseHttpService`)
+- [ ] `_API_URL` is a private class field (`${environment.apiUrl}/users/me/consent`), not a module-level constant
+- [ ] Both methods covered by tests (request URL/method/body asserted via `HttpTestingController`)
+- [ ] `ng test --include='**/consent.service.spec.ts'` passes
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/consent.service.spec.ts'`
+
+---
+
+### C5: `AccountPage` — consent display + toggle UI
+
+**What**: Add a new section to the account page, between "Your data" and "Delete account", showing Essential and Marketing consent status with a toggle button each. Load initial state from `SessionService.currentUser()`'s new consent fields (C1) — no separate `getConsent()` call needed on page load, the profile fetch already carries this data. On toggle, call `ConsentService.updateConsent(purpose, !currentValue)`; on success, push the returned `iConsentResponse` fields back into `SessionService` via `updateCurrentUser()` (merging, since `iConsentResponse`'s field names differ from `iUserResponse`'s — map `essentialGranted → essentialConsentGranted` etc. explicitly, do not assume they line up). Toggling Essential off shows a `confirm()`-style warning first (plain browser `confirm()` is consistent with this page's existing lack of a custom dialog component — `deleteAccount()` uses a type-to-confirm input instead, but a full confiron-type flow is overkill for a reversible toggle; a native `confirm()` is proportionate here).
+
+**Where**:
+- `src/app/features/identity/user/pages/account/account.ts` (modify — inject `ConsentService`, add `consentSubmitting`/`consentBanner` signals or a second `useFormSubmission()` instance, add `toggleEssentialConsent()`/`toggleMarketingConsent()` methods)
+- `src/app/features/identity/user/pages/account/account.html` (modify — new section, `data-testid="account-essential-consent-toggle"`, `data-testid="account-marketing-consent-toggle"`, `data-testid="account-consent-error-banner"`, status text testids `account-essential-consent-status`/`account-marketing-consent-status`)
+- `src/app/features/identity/user/pages/account/account.spec.ts` (modify)
+
+**Depends on**: C1, C4
+**Reuses**: `SessionService.currentUser`/`updateCurrentUser()`, `useFormSubmission()` (per H5/H10 pattern), existing testid-prefix convention (`account-*`)
+**Requirement**: IDENT-10
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] Essential and Marketing consent status render from `SessionService.currentUser()` on page load, no extra network call
+- [ ] Toggling either purpose calls `ConsentService.updateConsent` and reflects the response (not an optimistic local flip) in the UI
+- [ ] Toggling Essential off shows a confirmation prompt before the API call fires; cancelling makes no call
+- [ ] A failed toggle shows `account-consent-error-banner` and leaves the displayed status unchanged (matching the "render actual, never optimistic" edge case in `spec.md`)
+- [ ] `ng test --include='**/account.spec.ts'` passes with new toggle-path test cases added (success, failure, essential-cancel)
+
+**Tests**: unit
+**Gate**: quick — `ng test --include='**/account.spec.ts'`
+
+---
+
+### C6: Full suite + build gate
+
+**What**: Run the complete verification pipeline after C1–C5 land, matching how the T/M/H phases were closed out.
+
+**Where**: N/A (verification only)
+
+**Depends on**: C1–C5
+**Requirement**: IDENT-10
+
+**Tools**: MCP: NONE · Skill: NONE
+
+**Done when**:
+- [ ] `npm test` passes in full (same known baseline as prior phases — no new failures introduced)
+- [ ] `npm run build` succeeds (client + server bundles)
+- [ ] `npm run lint` passes with no new violations
+- [ ] Manual smoke check: log in, view account page and confirm consent status renders, toggle Marketing off/on and confirm it persists across a reload (re-fetch via `getMe()`), export data and confirm the JSON has the corrected five-field consent shape
+
+**Tests**: full suite
+**Gate**: full — `npm test && npm run build && npm run lint`
+
+**Commit**: `fix(identity): align UserResponse/UserDataExportResponse with backend consent fields, add consent management UI`

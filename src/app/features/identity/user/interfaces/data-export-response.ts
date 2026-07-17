@@ -8,5 +8,9 @@ export interface iDataExportResponse {
   status: string;
   createdAt: string;
   consentGivenAt: string | null;
+  essentialConsentRevokedAt: string | null;
+  marketingConsentGranted: boolean;
+  marketingConsentGivenAt: string | null;
+  marketingConsentRevokedAt: string | null;
   auditHistory: iAuditLogEntryRecord[];
 }

@@ -13,6 +13,12 @@ const user: iUserResponse = {
   role: 'Renter',
   status: 'Active',
   createdAt: '2026-01-01T00:00:00Z',
+  essentialConsentGranted: true,
+  essentialConsentGivenAt: '2026-01-01T00:00:00Z',
+  essentialConsentRevokedAt: null,
+  marketingConsentGranted: false,
+  marketingConsentGivenAt: null,
+  marketingConsentRevokedAt: null,
 };
 
 const authTokenResponse: iAuthTokenResponse = {

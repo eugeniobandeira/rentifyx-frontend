@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { UserService } from '@features/identity/user/services/user.service';
+import { ConsentService } from '@features/identity/user/services/consent/consent.service';
+import { iConsentResponse } from '@features/identity/user/interfaces/consent-response';
+import { ConsentPurpose } from '@features/identity/user/types/consent-purpose';
 import { useFormSubmission } from '@shared/composables/use-form-submission';
 
 @Component({
@@ -15,6 +18,7 @@ import { useFormSubmission } from '@shared/composables/use-form-submission';
 })
 export class AccountPage {
   private readonly _userService = inject(UserService);
+  private readonly _consentService = inject(ConsentService);
   private readonly _sessionService = inject(SessionService);
   private readonly _router = inject(Router);
   private readonly _document = inject(DOCUMENT);
@@ -31,6 +35,9 @@ export class AccountPage {
   readonly deleting = signal(false);
   readonly deleteBanner = signal<string | null>(null);
   deleteConfirmText = '';
+
+  readonly consentSubmitting = signal(false);
+  readonly consentBanner = signal<string | null>(null);
 
   constructor() {
     this._formSubmission.setSubmitting(true);
@@ -89,6 +96,61 @@ export class AccountPage {
         this.deleteBanner.set("Couldn't delete your account, try again later.");
       },
     });
+  }
+
+  toggleEssentialConsent(): void {
+    const user = this.user();
+    if (!user) {
+      return;
+    }
+
+    const nextGranted = !user.essentialConsentGranted;
+    if (!nextGranted && !confirm('Revoking essential consent may affect core account functionality. Continue?')) {
+      return;
+    }
+
+    this._updateConsent('Essential', nextGranted);
+  }
+
+  toggleMarketingConsent(): void {
+    const user = this.user();
+    if (!user) {
+      return;
+    }
+
+    this._updateConsent('Marketing', !user.marketingConsentGranted);
+  }
+
+  private _updateConsent(purpose: ConsentPurpose, granted: boolean): void {
+    const user = this.user();
+    if (!user) {
+      return;
+    }
+
+    this.consentBanner.set(null);
+    this.consentSubmitting.set(true);
+
+    this._consentService.updateConsent(purpose, granted).subscribe({
+      next: (consent) => {
+        this.consentSubmitting.set(false);
+        this._sessionService.updateCurrentUser({ ...user, ...this._toUserConsentFields(consent) });
+      },
+      error: () => {
+        this.consentSubmitting.set(false);
+        this.consentBanner.set("Couldn't update your consent, try again later.");
+      },
+    });
+  }
+
+  private _toUserConsentFields(consent: iConsentResponse) {
+    return {
+      essentialConsentGranted: consent.essentialGranted,
+      essentialConsentGivenAt: consent.essentialGrantedAt,
+      essentialConsentRevokedAt: consent.essentialRevokedAt,
+      marketingConsentGranted: consent.marketingGranted,
+      marketingConsentGivenAt: consent.marketingGrantedAt,
+      marketingConsentRevokedAt: consent.marketingRevokedAt,
+    };
   }
 
   private _downloadJson(data: unknown, filename: string): void {
