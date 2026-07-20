@@ -1,7 +1,7 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
-import { Layout } from '@core/layout/layout/layout';
+import { Layout } from '@core/layout/layout';
 
 @Component({
   selector: 'app-root',
