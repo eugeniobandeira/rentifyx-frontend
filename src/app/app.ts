@@ -1,10 +1,11 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
+import { LayoutShell } from '@core/layout/layout-shell/layout-shell';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, LayoutShell],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

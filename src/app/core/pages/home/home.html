@@ -1,16 +1,4 @@
-<div class="min-h-screen bg-bg-canvas" data-testid="home-page">
-  <header class="flex items-center justify-between px-4 py-4 sm:px-6">
-    <span class="text-sm font-semibold tracking-wide text-text-primary">RentityX</span>
-    <button
-      type="button"
-      (click)="themeService.toggle()"
-      class="rounded-md border border-border-default bg-bg-surface px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-canvas"
-      data-testid="home-theme-toggle-button"
-    >
-      {{ themeService.isDark() ? 'Modo claro' : 'Modo escuro' }}
-    </button>
-  </header>
-
+<div data-testid="home-page">
   <section
     class="flex flex-col items-center px-4 py-12 text-center sm:py-20"
     data-testid="home-hero"

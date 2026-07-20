@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
-import { ThemeService } from '@core/services/theme.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
 import { HomePage } from './home';
 
@@ -25,21 +24,15 @@ describe('HomePage', () => {
     isAuthenticated: ReturnType<typeof signal<boolean>>;
     currentUser: ReturnType<typeof signal<iUserResponse | null>>;
   };
-  let themeService: { isDark: ReturnType<typeof signal<boolean>>; toggle: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     sessionService = { isAuthenticated: signal(false), currentUser: signal(null) };
-    themeService = { isDark: signal(false), toggle: vi.fn() };
   });
 
   function configure(): ComponentFixture<HomePage> {
     TestBed.configureTestingModule({
       imports: [HomePage],
-      providers: [
-        provideRouter([]),
-        { provide: SessionService, useValue: sessionService },
-        { provide: ThemeService, useValue: themeService },
-      ],
+      providers: [provideRouter([]), { provide: SessionService, useValue: sessionService }],
     });
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();
@@ -65,16 +58,5 @@ describe('HomePage', () => {
     expect(text).toContain('jane@example.com');
     expect(fixture.nativeElement.querySelector('[data-testid="home-account-link"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-testid="home-guest-actions"]')).toBeFalsy();
-  });
-
-  it('the theme toggle button calls ThemeService.toggle()', () => {
-    const fixture = configure();
-    const button: HTMLButtonElement = fixture.nativeElement.querySelector(
-      '[data-testid="home-theme-toggle-button"]',
-    );
-
-    button.click();
-
-    expect(themeService.toggle).toHaveBeenCalledTimes(1);
   });
 });

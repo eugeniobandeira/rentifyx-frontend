@@ -5,9 +5,23 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { App } from './app';
 
+function mockMatchMedia(): void {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    configurable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }),
+  });
+}
+
 describe('App', () => {
   beforeEach(async () => {
     localStorage.clear();
+    mockMatchMedia();
     await TestBed.configureTestingModule({
       imports: [App, RouterTestingModule],
       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
