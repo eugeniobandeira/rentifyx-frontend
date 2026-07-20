@@ -1,0 +1,56 @@
+<header
+  class="flex items-center justify-between px-4 py-4 sm:px-6"
+  data-testid="header"
+>
+  <a
+    routerLink="/"
+    class="text-sm font-semibold tracking-wide text-text-primary"
+    data-testid="header-logo-link"
+  >
+    RentityX
+  </a>
+
+  <div class="flex items-center gap-3">
+    @if (isAuthenticated() && !isRestoringSession()) {
+      <a
+        routerLink="/account"
+        class="text-sm font-medium text-text-secondary hover:text-text-primary"
+        data-testid="header-account-link"
+      >
+        Minha conta
+      </a>
+      <button
+        type="button"
+        (click)="logout()"
+        class="text-sm font-medium text-text-secondary hover:text-text-primary"
+        data-testid="header-logout-button"
+      >
+        Sair
+      </button>
+    } @else {
+      <a
+        routerLink="/login"
+        class="text-sm font-medium text-text-secondary hover:text-text-primary"
+        data-testid="header-login-link"
+      >
+        Entrar
+      </a>
+      <a
+        routerLink="/register"
+        class="text-sm font-medium text-text-secondary hover:text-text-primary"
+        data-testid="header-register-link"
+      >
+        Criar conta
+      </a>
+    }
+
+    <button
+      type="button"
+      (click)="themeService.toggle()"
+      class="rounded-md border border-border-default bg-bg-surface px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-canvas"
+      data-testid="header-theme-toggle-button"
+    >
+      {{ themeService.isDark() ? 'Modo claro' : 'Modo escuro' }}
+    </button>
+  </div>
+</header>

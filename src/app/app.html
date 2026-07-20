@@ -1,5 +1,5 @@
 <main class="app-shell" data-testid="app-shell">
-  <app-layout-shell>
+  <app-layout>
     @if (isRestoringSession()) {
       <div class="flex min-h-[50vh] items-center justify-center" data-testid="app-restoring-session">
         <p class="text-sm text-text-secondary">Restoring session…</p>
@@ -7,5 +7,5 @@
     } @else {
       <router-outlet />
     }
-  </app-layout-shell>
+  </app-layout>
 </main>

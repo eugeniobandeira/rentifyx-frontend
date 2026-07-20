@@ -4,20 +4,18 @@ import { SessionService } from '@features/identity/auth/session/services/session
 import { ThemeService } from '@core/services/theme.service';
 
 @Component({
-  selector: 'app-layout-shell',
+  selector: 'app-header',
   standalone: true,
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './layout-shell.html',
+  templateUrl: './header.html',
 })
-export class LayoutShell {
+export class Header {
   private readonly _sessionService = inject(SessionService);
   protected readonly themeService = inject(ThemeService);
 
   protected readonly isAuthenticated = this._sessionService.isAuthenticated;
   protected readonly isRestoringSession = this._sessionService.isRestoringSession;
-
-  protected readonly currentYear = new Date().getFullYear();
 
   protected logout(): void {
     this._sessionService.logout().subscribe();
