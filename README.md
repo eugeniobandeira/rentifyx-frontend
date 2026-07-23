@@ -1,59 +1,55 @@
-# RentityxFrontend
+# RentifyX Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.6.
+Angular 22 frontend for the RentifyX platform. Standalone components, SSR-enabled, Tailwind CSS v4. Currently integrates with `rentifyx-identity-api` only (auth, session, LGPD data export/consent) — `rentifyx-communications-api`, `rentifyx-asset-registry-api`, and `rentifyx-ai-services` are not yet consumed by this app.
 
-## Development server
+For conventions, folder structure, and architecture decisions, see [`CLAUDE.md`](./CLAUDE.md). For product scope, roadmap, and decision history, see [`.specs/project/`](./.specs/project/).
 
-To start a local development server, run:
+## Stack
 
-```bash
-ng serve
-```
+- **Angular 22** — standalone components, no NgModules
+- **SSR** via `@angular/ssr` + Express (`src/server.ts`)
+- **Styling** — Tailwind CSS v4 (`@tailwindcss/postcss`)
+- **Tests** — Vitest (Angular's native unit-test builder), no Karma/Jasmine
+- **State** — Angular Signals, no NgRx/Redux
+- **TypeScript** `strict: true` + extra strictness flags (`noImplicitOverride`, `noPropertyAccessFromIndexSignature`, etc.)
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Running locally
 
-## Code scaffolding
+The app needs a backend to talk to. Two options:
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+**Option A — mock server (no backend required):**
 
 ```bash
-ng generate --help
+npm install
+npm run dev   # runs `ng serve` + a local mock of identity-api's API on :5000, concurrently
 ```
 
-## Building
-
-To build the project run:
+**Option B — real backend:**
 
 ```bash
-ng build
+npm install
+npm start     # ng serve on http://localhost:4200
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+`src/app/environment/environment.ts` sets `apiUrl` — a single file, no dev/prod split yet (tracked as tech debt). Update it to point at wherever `rentifyx-identity-api` is actually running (local Aspire host, or the shared EC2 instance) before testing against a real backend.
 
-## Running unit tests
+**Known integration gap:** `rentifyx-identity-api`'s CORS policy must include this app's origin (`http://localhost:4200` for local dev) or every request fails at the CORS layer regardless of frontend correctness — see that repo's `CorsExtension.cs` for current state.
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Other commands
 
 ```bash
-ng test
+npm run build       # production build, output in dist/
+npm run watch        # dev build, watch mode
+npm test             # unit tests via Vitest
+npm run lint         # ESLint + Prettier (config in eslint.config.js / .prettierrc)
 ```
 
-## Running end-to-end tests
+No e2e framework configured (`ng e2e` is a no-op stub). No CI/CD pipeline yet — lint/build/test run locally.
 
-For end-to-end (e2e) testing, run:
+## Architecture at a glance
 
-```bash
-ng e2e
-```
+- `core/` — cross-cutting infra with no domain ownership: guards, interceptors, layout shell
+- `features/<domain>/<entity>/` — one folder per entity, each owning its own `components/`, `interfaces/`, `services/`
+- `shared/` — reusable UI kit, composables, generic services
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+`SessionService` is the single source of truth for auth state (access token in memory only, never persisted; refresh token lives in an httpOnly cookie set by the backend). See `CLAUDE.md` for the full session/auth flow, error-handling convention, and naming rules.
