@@ -28,8 +28,8 @@
                 [attr.data-testid]="'admin-review-queue-item-' + item.id"
                 (click)="selectAsset(item.id)"
               >
-                <p class="text-sm font-medium text-text-primary">{{ item.title }}</p>
-                <p class="mt-1 text-xs text-text-secondary">
+                <p class="truncate text-sm font-medium text-text-primary">{{ item.title }}</p>
+                <p class="mt-1 truncate text-xs text-text-secondary">
                   {{ categoryName(item.categoryId) }} · R$ {{ item.price | number: '1.2-2' }} / dia
                 </p>
               </button>

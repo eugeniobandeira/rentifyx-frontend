@@ -15,14 +15,14 @@
   } @else if (asset(); as asset) {
     <article class="mt-6 rounded-lg border border-border-default bg-bg-surface p-6" data-testid="asset-detail-card">
       <span
-        class="inline-block rounded-full px-2.5 py-1 text-xs font-medium"
+        class="inline-block max-w-full truncate rounded-full px-2.5 py-1 text-xs font-medium"
         [style]="badgeStyle()"
         data-testid="asset-detail-category-badge"
       >
         {{ categoryName() }}
       </span>
 
-      <h1 class="mt-3 text-2xl font-semibold text-text-primary" data-testid="asset-detail-title">
+      <h1 class="mt-3 wrap-break-word text-2xl font-semibold text-text-primary" data-testid="asset-detail-title">
         {{ asset.title }}
       </h1>
 

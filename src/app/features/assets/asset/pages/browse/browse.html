@@ -90,13 +90,13 @@
           [attr.data-testid]="'browse-asset-card-' + asset.id"
         >
           <span
-            class="inline-block rounded-full px-2.5 py-1 text-xs font-medium"
+            class="inline-block max-w-full truncate rounded-full px-2.5 py-1 text-xs font-medium"
             [style]="categoryBadgeStyle(asset.categoryId)"
             data-testid="browse-asset-category-badge"
           >
             {{ categoryName(asset.categoryId) }}
           </span>
-          <h2 class="mt-3 text-base font-semibold text-text-primary" data-testid="browse-asset-title">
+          <h2 class="mt-3 wrap-break-word text-base font-semibold text-text-primary" data-testid="browse-asset-title">
             {{ asset.title }}
           </h2>
           <p class="mt-1 text-sm text-text-secondary" data-testid="browse-asset-price">

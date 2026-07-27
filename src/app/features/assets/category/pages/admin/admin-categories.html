@@ -102,11 +102,11 @@
               </div>
             </div>
           } @else {
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-text-primary" data-testid="admin-categories-item-name">{{ category.name }}</span>
+            <div class="flex min-w-0 items-center justify-between gap-2">
+              <span class="min-w-0 truncate text-sm text-text-primary" data-testid="admin-categories-item-name">{{ category.name }}</span>
               <button
                 type="button"
-                class="text-sm font-medium text-brand-default hover:underline"
+                class="shrink-0 text-sm font-medium text-brand-default hover:underline"
                 data-testid="admin-categories-edit-button"
                 (click)="startEdit(category)"
               >
