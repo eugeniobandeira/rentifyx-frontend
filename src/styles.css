@@ -6,7 +6,7 @@
 
 @theme {
   /* Surface */
-  --color-bg-canvas: var(--color-slate-50);
+  --color-bg-canvas: var(--color-slate-100);
   --color-bg-surface: #fff;
   --color-bg-surface-raised: #fff;
   --color-bg-overlay: color-mix(in oklab, var(--color-slate-950) 50%, transparent);
