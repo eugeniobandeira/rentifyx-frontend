@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------
 
 resource "aws_ecr_repository" "frontend" {
-  name                 = "${var.prefix}-frontend"
+  name                 = var.prefix
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -93,7 +93,7 @@ resource "aws_iam_instance_profile" "ec2" {
 # ---------------------------------------------------------------------------
 
 resource "aws_security_group" "frontend" {
-  name        = "${var.prefix}-frontend-sg"
+  name        = "${var.prefix}-sg"
   description = "Allow inbound HTTP on 4000 (SSR server) and optional SSH"
   vpc_id      = var.vpc_id
 
@@ -164,7 +164,7 @@ resource "aws_instance" "frontend" {
   }
 
   tags = {
-    Name = "${var.prefix}-frontend"
+    Name = var.prefix
   }
 
   # Same reasoning as every other RentifyX repo's ec2 module: AMI updates

@@ -19,10 +19,16 @@ aws ecr get-login-password --region ${aws_region} \
 docker pull ${ecr_repository_url}:latest
 
 # Run the SSR server container (restarts automatically on failure or reboot)
+# NG_ALLOWED_HOSTS=* - Angular 19+ SSR rejects requests whose Host header
+# isn't on an explicit allowlist (SSRF protection). No fixed domain/CloudFront
+# exists yet (only this EC2's own public IP), so there's nothing narrower to
+# allow yet - same temporary posture already taken for CORS on the backend
+# repos. Narrow to the real domain once one exists.
 docker run -d \
   --name rentifyx-frontend \
   --restart unless-stopped \
   -p 4000:4000 \
   -e NODE_ENV=production \
   -e PORT=4000 \
+  -e NG_ALLOWED_HOSTS=* \
   ${ecr_repository_url}:latest
