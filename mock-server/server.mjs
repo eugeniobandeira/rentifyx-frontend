@@ -95,6 +95,14 @@ const assets = [
   { id: randomUUID(), title: 'Tower Crane Liebherr 132EC-H6', description: 'High-capacity tower crane for medium to large construction sites, includes operator training.', price: 1200.0, categoryId: 'cat-cranes', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
   { id: randomUUID(), title: 'Portable Generator 5000W', description: 'Reliable 5000W generator, quiet operation, includes fuel can.', price: 65.0, categoryId: 'cat-electronics', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
   { id: randomUUID(), title: 'Pickup Truck Ford Ranger', description: '2023 Ford Ranger, 4x4, full tank included, daily/weekly rates.', price: 180.0, categoryId: 'cat-vehicles', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
+  { id: randomUUID(), title: 'Tower Crane Potain MDT 178', description: 'Mid-range tower crane, 8t max load, includes rigging kit.', price: 980.0, categoryId: 'cat-cranes', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
+  { id: randomUUID(), title: 'Backhoe Loader JCB 3CX', description: 'Versatile backhoe loader, 4x4, extendable dipper, ready for site work.', price: 320.0, categoryId: 'cat-heavy-machinery', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
+  { id: randomUUID(), title: 'Drone DJI Mavic 3 Enterprise', description: 'Survey-grade drone with thermal camera, spare batteries included.', price: 145.0, categoryId: 'cat-electronics', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
+  { id: randomUUID(), title: 'Cargo Van Mercedes Sprinter', description: '2021 Sprinter, 15m³ cargo space, ideal for moves and deliveries.', price: 220.0, categoryId: 'cat-vehicles', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
+  { id: randomUUID(), title: 'Wheel Loader Volvo L60H', description: 'Heavy-duty wheel loader awaiting moderation review.', price: 410.0, categoryId: 'cat-heavy-machinery', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_PENDING_MODERATION, createdAt: now() },
+  { id: randomUUID(), title: 'Rooftop Solar Generator Kit', description: 'Portable solar generator kit with panels, awaiting moderation review.', price: 95.0, categoryId: 'cat-electronics', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_PENDING_MODERATION, createdAt: now() },
+  { id: randomUUID(), title: 'Motorcycle Honda CB500X', description: 'Adventure motorcycle, awaiting moderation review.', price: 90.0, categoryId: 'cat-vehicles', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_PENDING_MODERATION, createdAt: now() },
+  { id: randomUUID(), title: 'Crawler Crane Kobelco CK1000', description: 'Suspended pending compliance review.', price: 1500.0, categoryId: 'cat-cranes', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_SUSPENDED, createdAt: now() },
 ];
 
 function base64url(value) {
