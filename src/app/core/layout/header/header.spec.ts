@@ -4,7 +4,6 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
-import { ThemeService } from '@core/services/theme.service';
 import { Header } from './header';
 
 const adminUser: iUserResponse = {
@@ -28,8 +27,6 @@ describe('Header', () => {
     currentUser: ReturnType<typeof signal<iUserResponse | null>>;
     logout: ReturnType<typeof vi.fn>;
   };
-  let themeService: { isDark: ReturnType<typeof signal<boolean>>; toggle: ReturnType<typeof vi.fn> };
-
   beforeEach(() => {
     sessionService = {
       isAuthenticated: signal(false),
@@ -37,17 +34,12 @@ describe('Header', () => {
       currentUser: signal<iUserResponse | null>(null),
       logout: vi.fn().mockReturnValue(of(undefined)),
     };
-    themeService = { isDark: signal(false), toggle: vi.fn() };
   });
 
   function configure(): ComponentFixture<Header> {
     TestBed.configureTestingModule({
       imports: [Header],
-      providers: [
-        provideRouter([]),
-        { provide: SessionService, useValue: sessionService },
-        { provide: ThemeService, useValue: themeService },
-      ],
+      providers: [provideRouter([]), { provide: SessionService, useValue: sessionService }],
     });
     const fixture = TestBed.createComponent(Header);
     fixture.detectChanges();
@@ -94,16 +86,6 @@ describe('Header', () => {
     button.click();
 
     expect(sessionService.logout).toHaveBeenCalledTimes(1);
-  });
-
-  it('the theme toggle button calls ThemeService.toggle()', () => {
-    const fixture = configure();
-    const button: HTMLButtonElement = fixture.nativeElement.querySelector(
-      '[data-testid="header-theme-toggle-button"]',
-    );
-    button.click();
-
-    expect(themeService.toggle).toHaveBeenCalledTimes(1);
   });
 
   it('shows admin links when the current user has the Admin role', () => {

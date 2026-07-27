@@ -1,16 +1,13 @@
 <header
-  class="flex items-center justify-between px-4 py-4 sm:px-6"
+  class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-border-default bg-bg-surface px-4 py-3 sm:px-6"
   data-testid="header"
 >
-  <a
-    routerLink="/"
-    class="text-sm font-semibold tracking-wide text-text-primary"
-    data-testid="header-logo-link"
-  >
-    RentityX
+  <a routerLink="/" class="flex items-center gap-1" data-testid="header-logo-link">
+    <span class="text-xl font-extrabold tracking-tight text-text-primary">RentifyX</span>
+    <span class="h-2 w-2 rounded-sm bg-brand-default"></span>
   </a>
 
-  <div class="flex items-center gap-3">
+  <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
     @if (isAuthenticated() && !isRestoringSession()) {
       @if (isAdmin()) {
         <a
@@ -38,7 +35,7 @@
       <button
         type="button"
         (click)="logout()"
-        class="text-sm font-medium text-text-secondary hover:text-text-primary"
+        class="rounded-md border border-border-strong px-4 py-2 text-sm font-semibold text-text-primary hover:bg-bg-canvas"
         data-testid="header-logout-button"
       >
         Sair
@@ -53,20 +50,11 @@
       </a>
       <a
         routerLink="/register"
-        class="text-sm font-medium text-text-secondary hover:text-text-primary"
+        class="rounded-md bg-brand-default px-4 py-2 text-sm font-semibold text-brand-foreground hover:bg-brand-hover"
         data-testid="header-register-link"
       >
         Criar conta
       </a>
     }
-
-    <button
-      type="button"
-      (click)="themeService.toggle()"
-      class="rounded-md border border-border-default bg-bg-surface px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-canvas"
-      data-testid="header-theme-toggle-button"
-    >
-      {{ themeService.isDark() ? 'Modo claro' : 'Modo escuro' }}
-    </button>
   </div>
 </header>
