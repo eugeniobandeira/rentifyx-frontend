@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-The identity feature (auth, session, LGPD data export/delete) is implemented under `src/app/features/identity/`, following the entity-per-domain structure documented below. `src/app/core` and `src/app/shared` hold cross-cutting infra and reusable pieces respectively — see the Folder convention below for what belongs where.
+The identity feature (auth, session, LGPD data export/delete) and the asset-registry integration (browse/detail/create/admin flows, `features/assets/`) are implemented under `src/app/features/`, following the entity-per-domain structure documented below. `src/app/core` and `src/app/shared` hold cross-cutting infra and reusable pieces respectively — see the Folder convention below for what belongs where.
+
+**Deployed to AWS (2026-07-27)**: real EC2 instance running the SSR server container, pulled from ECR — see the Deployment section below. Check `.specs/project/STATE.md` for the deploy session's full detail (real bugs found live: ECR naming collision, Angular SSR host-header rejection).
 
 This repo no longer keeps `estrutura.md` (the original target folder-structure blueprint, copied from a larger sibling project) or `api-contracts.md` (the RentifyX Identity backend API contract) as files — both were reference material used to converge on the conventions below, which are now the authoritative source; several sections still cite "estrutura.md" by name for historical attribution (naming patterns like `*-form.config.ts`, `test-id.constants.ts`), not as a pointer to a readable file. For the backend contract (request/response shapes, validation rules, error formats), check the actual backend repo/OpenAPI spec if one is available — don't assume the shapes documented here are exhaustive.
 - `.specs/project/` (`PROJECT.md`, `ROADMAP.md`, `STATE.md`) — check `STATE.md` for the latest decisions/todos before assuming later-phase architecture is in place.
@@ -72,6 +74,17 @@ npm test            # ng test — runs unit tests via Vitest (Angular's unit-tes
   - Every private class member (fields and methods) is prefixed with `_` (e.g. `private _tokenStorage`, `private _handleError()`).
   - Prefer precise, explicit types everywhere; avoid `any` — use `unknown` with narrowing, generics, or a proper interface/type instead.
 - **Testing**: uses Angular's Vitest-based unit-test builder (`@angular/build:unit-test`), not Karma/Jasmine runner config. Test files are colocated as `*.spec.ts` next to the code under test.
+
+## Deployment
+
+Real infra, applied 2026-07-27: EC2 instance (`t2.micro`) running the SSR server as a Docker container, image pulled from an ECR repo — no CloudFront/domain/HTTPS in front yet, plain HTTP on port 4000, reached by the instance's public IP directly. `.specs/project/STATE.md` has the full session detail; this section is the quick-reference.
+
+- **`iac/terraform/`** (`main.tf`/`variables.tf`/`outputs.tf`/`backend.tf` + `modules/ec2/`) provisions: ECR repo, IAM role (SSM + ECR-pull only, no app-data permissions — the SSR server only proxies to already-deployed backend APIs), security group (inbound 4000, optional 22), and the EC2 instance itself. Reads `vpc_id`/`public_subnets` from `rentifyx-platform`'s `terraform_remote_state` (same cross-repo pattern every other RentifyX app repo uses) — this repo owns no networking of its own.
+- Resource naming: `local.prefix = "${app_name}-frontend-${environment}"` already contains "frontend" — don't append a second `-frontend` suffix to any resource name inside `modules/ec2` (a naming bug that produced `rentifyx-frontend-production-frontend` was fixed 2026-07-27, see STATE.md).
+- **`Dockerfile`** (repo root): multi-stage Node 22 Alpine build. `npm run build` produces `dist/rentityx-frontend/{server,browser}` (note the `rentityx` spelling — matches this repo's actual Angular project name, not `rentifyx`); the runtime stage copies just those two folders and runs `node server/server.mjs` on port 4000.
+- **`NG_ALLOWED_HOSTS` is required at container runtime, not optional.** Angular 19+'s SSR engine (`@angular/ssr`'s `AngularNodeAppEngine`) rejects any request whose `Host`/`X-Forwarded-Host` header isn't on an explicit allowlist (built-in SSRF protection) — without this env var, every request 400s. Currently set to `*` in `iac/terraform/modules/ec2/userdata.sh.tpl`'s `docker run` since there's no fixed domain/CloudFront yet, only the EC2 instance's own public IP (same temporary posture already used for CORS on the backend repos — narrow both once a real frontend origin exists).
+- Deploy sequence (manual, no CI/CD pipeline yet): `docker build` → `docker push` to the ECR repo `terraform apply` creates → `terraform apply` (or, for the EC2 instance specifically, replace/relaunch to pick up a new image — `userdata.sh.tpl` only runs on first boot, so an in-place image update on a *running* instance needs a manual `docker pull && docker rm -f && docker run` via SSM, not just a redeploy of Terraform).
+- Backend URLs (`environment.ts`'s `identityApiUrl`/`assetRegistryApiUrl`) point directly at those repos' own EC2 hosts — no reverse proxy/API gateway in front, same as local dev against a real backend.
 
 ## Git
 
