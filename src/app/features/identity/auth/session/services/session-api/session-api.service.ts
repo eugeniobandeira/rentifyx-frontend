@@ -9,7 +9,7 @@ import { iLogoutRequest } from '../../interfaces/logout-request';
 @Injectable({ providedIn: 'root' })
 export class SessionApiService {
   private readonly _baseHttp = inject(BaseHttpService);
-  private readonly _API_URL = `${environment.apiUrl}/auth`;
+  private readonly _API_URL = `${environment.identityApiUrl}/auth`;
 
   refresh(request: iRefreshRequest): Observable<iAuthTokenResponse> {
     return this._baseHttp.post<iAuthTokenResponse, iRefreshRequest>(

@@ -1,0 +1,121 @@
+<div class="mx-auto max-w-2xl px-4 py-8 sm:py-12" data-testid="admin-categories-page">
+  <h1 class="text-2xl font-semibold text-text-primary sm:text-3xl">Categorias</h1>
+
+  <form
+    class="mt-6 flex flex-col gap-3 rounded-lg border border-border-default bg-bg-surface p-4"
+    data-testid="admin-categories-create-form"
+    (ngSubmit)="onCreateSubmit()"
+  >
+    <h2 class="text-sm font-semibold text-text-primary">Nova categoria</h2>
+
+    @if (createError()) {
+      <p class="text-sm text-error" data-testid="admin-categories-create-error">{{ createError() }}</p>
+    }
+
+    <input
+      type="text"
+      name="newName"
+      placeholder="Nome da categoria"
+      class="rounded-md border border-border-default bg-bg-canvas px-3 py-2 text-sm text-text-primary"
+      data-testid="admin-categories-new-name-input"
+      [(ngModel)]="newName"
+    />
+
+    <select
+      name="newParentCategoryId"
+      class="rounded-md border border-border-default bg-bg-canvas px-3 py-2 text-sm text-text-primary"
+      data-testid="admin-categories-new-parent-select"
+      [(ngModel)]="newParentCategoryId"
+    >
+      <option value="">Categoria raiz (sem pai)</option>
+      @for (category of categories(); track category.id) {
+        <option [value]="category.id">{{ category.name }}</option>
+      }
+    </select>
+
+    <button
+      type="submit"
+      [disabled]="creating()"
+      class="self-start rounded-md bg-brand-default px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover active:bg-brand-active disabled:opacity-60"
+      data-testid="admin-categories-create-submit-button"
+    >
+      {{ creating() ? 'Criando...' : 'Criar categoria' }}
+    </button>
+  </form>
+
+  @if (loading()) {
+    <p class="mt-6 text-sm text-text-secondary" data-testid="admin-categories-loading">Carregando...</p>
+  } @else if (error()) {
+    <p
+      class="mt-6 rounded-md border border-error-border bg-error-subtle px-4 py-3 text-sm text-error-subtle-foreground"
+      data-testid="admin-categories-error-banner"
+    >
+      {{ error()?.message }}
+    </p>
+  } @else {
+    <ul class="mt-6 flex flex-col gap-2" data-testid="admin-categories-list">
+      @for (category of categories(); track category.id) {
+        <li
+          class="rounded-md border border-border-default bg-bg-surface p-3"
+          [style.padding-left.rem]="1 + category.depth"
+          [attr.data-testid]="'admin-categories-item-' + category.id"
+        >
+          @if (editingId() === category.id) {
+            <div class="flex flex-col gap-2">
+              @if (editError()) {
+                <p class="text-sm text-error" data-testid="admin-categories-edit-error">{{ editError() }}</p>
+              }
+              <input
+                type="text"
+                class="rounded-md border border-border-default bg-bg-canvas px-3 py-2 text-sm text-text-primary"
+                data-testid="admin-categories-edit-name-input"
+                [(ngModel)]="editName"
+              />
+              <select
+                class="rounded-md border border-border-default bg-bg-canvas px-3 py-2 text-sm text-text-primary"
+                data-testid="admin-categories-edit-parent-select"
+                [(ngModel)]="editParentCategoryId"
+              >
+                <option value="">Categoria raiz (sem pai)</option>
+                @for (option of categories(); track option.id) {
+                  <option [value]="option.id">{{ option.name }}</option>
+                }
+              </select>
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  [disabled]="savingEdit()"
+                  class="rounded-md bg-brand-default px-3 py-1.5 text-sm font-medium text-brand-foreground hover:bg-brand-hover disabled:opacity-60"
+                  data-testid="admin-categories-save-edit-button"
+                  (click)="saveEdit(category.id)"
+                >
+                  {{ savingEdit() ? 'Salvando...' : 'Salvar' }}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md border border-border-default px-3 py-1.5 text-sm font-medium text-text-primary hover:bg-bg-canvas"
+                  data-testid="admin-categories-cancel-edit-button"
+                  (click)="cancelEdit()"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          } @else {
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-text-primary" data-testid="admin-categories-item-name">{{ category.name }}</span>
+              <button
+                type="button"
+                class="text-sm font-medium text-brand-default hover:underline"
+                data-testid="admin-categories-edit-button"
+                (click)="startEdit(category)"
+              >
+                Editar
+              </button>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>

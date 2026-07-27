@@ -81,6 +81,32 @@ describe('httpErrorInterceptor', () => {
     });
   });
 
+  it('classifies a 403 as forbidden, using the backend title as the message', () => {
+    const result = captureError();
+
+    httpMock.expectOne('/api/v1/whatever').flush(
+      { title: 'Not authorized to view this asset.', status: 403, extensions: { correlationId: 'abc-123' } },
+      { status: 403, statusText: 'Forbidden' },
+    );
+
+    expect(result.error).toEqual({
+      kind: 'forbidden',
+      status: 403,
+      message: 'Not authorized to view this asset.',
+      correlationId: 'abc-123',
+      validationErrors: null,
+    });
+  });
+
+  it('classifies a 403 with no body title using a generic forbidden message', () => {
+    const result = captureError();
+
+    httpMock.expectOne('/api/v1/whatever').flush({}, { status: 403, statusText: 'Forbidden' });
+
+    expect(result.error?.kind).toBe('forbidden');
+    expect(result.error?.message).toBe("You don't have permission to do that");
+  });
+
   it('classifies a 409 as conflict', () => {
     const result = captureError();
 

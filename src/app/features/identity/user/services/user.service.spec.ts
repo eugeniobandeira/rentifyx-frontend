@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { environment } from '@app/environment/environment';
 import { UserService } from './user.service';
 import { iUserResponse } from '../interfaces/user-response';
 import { iDataExportResponse } from '../interfaces/data-export-response';
 
-const USERS_BASE_URL = 'http://localhost:5000/api/v1/users';
+const USERS_BASE_URL = `${environment.identityApiUrl}/users`;
 
 const user: iUserResponse = {
   id: 'user-1',

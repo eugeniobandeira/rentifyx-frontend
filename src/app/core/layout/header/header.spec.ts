@@ -3,13 +3,29 @@ import { signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
+import { iUserResponse } from '@features/identity/user/interfaces/user-response';
 import { ThemeService } from '@core/services/theme.service';
 import { Header } from './header';
+
+const adminUser: iUserResponse = {
+  id: 'user-1',
+  email: 'admin@example.com',
+  role: 'Admin',
+  status: 'Active',
+  createdAt: '2026-01-01T00:00:00Z',
+  essentialConsentGranted: true,
+  essentialConsentGivenAt: '2026-01-01T00:00:00Z',
+  essentialConsentRevokedAt: null,
+  marketingConsentGranted: false,
+  marketingConsentGivenAt: null,
+  marketingConsentRevokedAt: null,
+};
 
 describe('Header', () => {
   let sessionService: {
     isAuthenticated: ReturnType<typeof signal<boolean>>;
     isRestoringSession: ReturnType<typeof signal<boolean>>;
+    currentUser: ReturnType<typeof signal<iUserResponse | null>>;
     logout: ReturnType<typeof vi.fn>;
   };
   let themeService: { isDark: ReturnType<typeof signal<boolean>>; toggle: ReturnType<typeof vi.fn> };
@@ -18,6 +34,7 @@ describe('Header', () => {
     sessionService = {
       isAuthenticated: signal(false),
       isRestoringSession: signal(false),
+      currentUser: signal<iUserResponse | null>(null),
       logout: vi.fn().mockReturnValue(of(undefined)),
     };
     themeService = { isDark: signal(false), toggle: vi.fn() };
@@ -87,5 +104,25 @@ describe('Header', () => {
     button.click();
 
     expect(themeService.toggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows admin links when the current user has the Admin role', () => {
+    sessionService.isAuthenticated = signal(true);
+    sessionService.currentUser = signal(adminUser);
+
+    const fixture = configure();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="header-admin-categories-link"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="header-admin-review-link"]')).toBeTruthy();
+  });
+
+  it('hides admin links for a non-Admin authenticated user', () => {
+    sessionService.isAuthenticated = signal(true);
+    sessionService.currentUser = signal({ ...adminUser, role: 'Renter' });
+
+    const fixture = configure();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="header-admin-categories-link"]')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('[data-testid="header-admin-review-link"]')).toBeFalsy();
   });
 });

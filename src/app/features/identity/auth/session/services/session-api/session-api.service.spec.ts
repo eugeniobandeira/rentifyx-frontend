@@ -5,7 +5,9 @@ import { SessionApiService } from './session-api.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
 import { iAuthTokenResponse } from '../../interfaces/auth-token-response';
 
-const AUTH_BASE_URL = 'http://localhost:5000/api/v1/auth';
+import { environment } from '@app/environment/environment';
+
+const AUTH_BASE_URL = `${environment.identityApiUrl}/auth`;
 
 const user: iUserResponse = {
   id: 'user-1',

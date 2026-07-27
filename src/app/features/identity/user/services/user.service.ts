@@ -8,7 +8,7 @@ import { iDataExportResponse } from '../interfaces/data-export-response';
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly _http = inject(HttpClient);
-  private readonly _API_URL = `${environment.apiUrl}/users`;
+  private readonly _API_URL = `${environment.identityApiUrl}/users`;
 
   getMe(): Observable<iUserResponse> {
     return this._http.get<iUserResponse>(`${this._API_URL}/me`);

@@ -8,7 +8,7 @@ import { iLoginRequest } from '../interfaces/login-request';
 @Injectable({ providedIn: 'root' })
 export class LoginService {
   private readonly _baseHttp = inject(BaseHttpService);
-  private readonly _API_URL = `${environment.apiUrl}/auth/login`;
+  private readonly _API_URL = `${environment.identityApiUrl}/auth/login`;
 
   login(request: iLoginRequest): Observable<iAuthTokenResponse> {
     return this._baseHttp.post<iAuthTokenResponse, iLoginRequest>(this._API_URL, request, {

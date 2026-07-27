@@ -7,7 +7,7 @@ import { iResetPasswordRequest } from '../interfaces/reset-password-request';
 @Injectable({ providedIn: 'root' })
 export class ResetPasswordService {
   private readonly _baseHttp = inject(BaseHttpService);
-  private readonly _API_URL = `${environment.apiUrl}/auth/reset-password`;
+  private readonly _API_URL = `${environment.identityApiUrl}/auth/reset-password`;
 
   resetPassword(request: iResetPasswordRequest): Observable<void> {
     return this._baseHttp.post<void, iResetPasswordRequest>(this._API_URL, request, {

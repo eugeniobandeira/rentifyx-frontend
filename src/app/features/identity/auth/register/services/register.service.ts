@@ -8,7 +8,7 @@ import { iRegisterRequest } from '../interfaces/register-request';
 @Injectable({ providedIn: 'root' })
 export class RegisterService {
   private readonly _baseHttp = inject(BaseHttpService);
-  private readonly _API_URL = `${environment.apiUrl}/auth/register`;
+  private readonly _API_URL = `${environment.identityApiUrl}/auth/register`;
 
   register(request: iRegisterRequest): Observable<iUserResponse> {
     return this._baseHttp.post<iUserResponse, iRegisterRequest>(this._API_URL, request, {

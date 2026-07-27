@@ -12,6 +12,22 @@
 
   <div class="flex items-center gap-3">
     @if (isAuthenticated() && !isRestoringSession()) {
+      @if (isAdmin()) {
+        <a
+          routerLink="/admin/categories"
+          class="text-sm font-medium text-text-secondary hover:text-text-primary"
+          data-testid="header-admin-categories-link"
+        >
+          Categorias
+        </a>
+        <a
+          routerLink="/admin/review"
+          class="text-sm font-medium text-text-secondary hover:text-text-primary"
+          data-testid="header-admin-review-link"
+        >
+          Revisar anúncios
+        </a>
+      }
       <a
         routerLink="/account"
         class="text-sm font-medium text-text-secondary hover:text-text-primary"

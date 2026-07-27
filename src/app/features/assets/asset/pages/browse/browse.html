@@ -1,0 +1,123 @@
+<div class="mx-auto max-w-6xl px-4 py-8 sm:py-12" data-testid="browse-assets-page">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold text-text-primary sm:text-3xl">Catálogo</h1>
+      <p class="mt-2 text-sm text-text-secondary">Encontre itens disponíveis para aluguel.</p>
+    </div>
+    @if (isAuthenticated()) {
+      <a
+        routerLink="/catalog/new"
+        class="rounded-md bg-brand-default px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover active:bg-brand-active"
+        data-testid="browse-create-asset-link"
+      >
+        Anunciar item
+      </a>
+    }
+  </div>
+
+  <form
+    class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
+    data-testid="browse-filters-form"
+    (ngSubmit)="onSearchSubmit()"
+  >
+    <select
+      class="rounded-md border border-border-default bg-bg-surface px-3 py-2 text-sm text-text-primary"
+      data-testid="browse-category-select"
+      name="categoryId"
+      [(ngModel)]="categoryId"
+    >
+      <option value="">Todas as categorias</option>
+      @for (category of categories(); track category.id) {
+        <option [value]="category.id">{{ category.name }}</option>
+      }
+    </select>
+
+    <input
+      class="rounded-md border border-border-default bg-bg-surface px-3 py-2 text-sm text-text-primary"
+      data-testid="browse-keyword-input"
+      type="text"
+      name="keyword"
+      placeholder="Buscar por palavra-chave"
+      [(ngModel)]="keyword"
+    />
+
+    <input
+      class="rounded-md border border-border-default bg-bg-surface px-3 py-2 text-sm text-text-primary"
+      data-testid="browse-min-price-input"
+      type="number"
+      name="minPrice"
+      placeholder="Preço mínimo"
+      [(ngModel)]="minPrice"
+    />
+
+    <input
+      class="rounded-md border border-border-default bg-bg-surface px-3 py-2 text-sm text-text-primary"
+      data-testid="browse-max-price-input"
+      type="number"
+      name="maxPrice"
+      placeholder="Preço máximo"
+      [(ngModel)]="maxPrice"
+    />
+
+    <button
+      type="submit"
+      class="rounded-md bg-brand-default px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover active:bg-brand-active"
+      data-testid="browse-search-submit-button"
+    >
+      Buscar
+    </button>
+  </form>
+
+  @if (loading()) {
+    <p class="mt-8 text-sm text-text-secondary" data-testid="browse-loading">Carregando...</p>
+  } @else if (error()) {
+    <p class="mt-8 rounded-md border border-error-border bg-error-subtle px-4 py-3 text-sm text-error-subtle-foreground" data-testid="browse-error-banner">
+      {{ error()?.message }}
+    </p>
+  } @else if (items().length === 0) {
+    <p class="mt-8 text-sm text-text-secondary" data-testid="browse-empty-state">
+      Nenhum item encontrado para os filtros selecionados.
+    </p>
+  } @else {
+    <div
+      class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      data-testid="browse-asset-grid"
+    >
+      @for (asset of items(); track asset.id) {
+        <a
+          [routerLink]="['/catalog', asset.id]"
+          class="block rounded-lg border border-border-default bg-bg-surface p-4 hover:bg-bg-canvas"
+          [attr.data-testid]="'browse-asset-card-' + asset.id"
+        >
+          <span
+            class="inline-block rounded-full px-2.5 py-1 text-xs font-medium"
+            [style]="categoryBadgeStyle(asset.categoryId)"
+            data-testid="browse-asset-category-badge"
+          >
+            {{ categoryName(asset.categoryId) }}
+          </span>
+          <h2 class="mt-3 text-base font-semibold text-text-primary" data-testid="browse-asset-title">
+            {{ asset.title }}
+          </h2>
+          <p class="mt-1 text-sm text-text-secondary" data-testid="browse-asset-price">
+            R$ {{ asset.price | number: '1.2-2' }} / dia
+          </p>
+        </a>
+      }
+    </div>
+
+    @if (nextPageToken()) {
+      <div class="mt-8 flex justify-center">
+        <button
+          type="button"
+          class="rounded-md border border-border-default px-4 py-2 text-sm font-medium text-text-primary hover:bg-bg-canvas disabled:opacity-50"
+          data-testid="browse-load-more-button"
+          [disabled]="loadingMore()"
+          (click)="onLoadMore()"
+        >
+          {{ loadingMore() ? 'Carregando...' : 'Carregar mais' }}
+        </button>
+      </div>
+    }
+  }
+</div>

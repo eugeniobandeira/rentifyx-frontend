@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { environment } from '@app/environment/environment';
 import { ConsentService } from './consent.service';
 import { iConsentResponse } from '../../interfaces/consent-response';
 
-const CONSENT_URL = 'http://localhost:5000/api/v1/users/me/consent';
+const CONSENT_URL = `${environment.identityApiUrl}/users/me/consent`;
 
 const consent: iConsentResponse = {
   essentialGranted: true,

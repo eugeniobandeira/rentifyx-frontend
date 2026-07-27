@@ -1,0 +1,159 @@
+<div class="mx-auto max-w-xl px-4 py-8 sm:py-12" data-testid="create-asset-page">
+  <h1 class="text-2xl font-semibold text-text-primary sm:text-3xl">Anunciar item</h1>
+
+  @if (step() === 'form') {
+    <form
+      class="mt-6 flex flex-col gap-4"
+      data-testid="create-asset-form"
+      [formGroup]="form"
+      (ngSubmit)="onCreateSubmit()"
+    >
+      @if (banner()) {
+        <p
+          class="rounded-md border border-error-border bg-error-subtle px-4 py-3 text-sm text-error-subtle-foreground"
+          data-testid="create-asset-banner"
+        >
+          {{ banner() }}
+        </p>
+      }
+
+      <div>
+        <label for="title" class="block text-sm font-medium text-text-primary">Título</label>
+        <input
+          id="title"
+          type="text"
+          formControlName="title"
+          class="mt-1 w-full rounded-md border border-border-default bg-bg-surface px-3 py-2 text-sm text-text-primary"
+          data-testid="create-asset-title-input"
+        />
+        @if (isInvalid('title')) {
+          <p class="mt-1 text-sm text-error" data-testid="create-asset-title-error">
+            {{ fieldErrorMessage('title') }}
+          </p>
+        }
+      </div>
+
+      <div>
+        <label for="description" class="block text-sm font-medium text-text-primary">Descrição</label>
+        <textarea
+          id="description"
+          rows="4"
+          formControlName="description"
+          class="mt-1 w-full rounded-md border border-border-default bg-bg-surface px-3 py-2 text-sm text-text-primary"
+          data-testid="create-asset-description-input"
+        ></textarea>
+        @if (isInvalid('description')) {
+          <p class="mt-1 text-sm text-error" data-testid="create-asset-description-error">
+            {{ fieldErrorMessage('description') }}
+          </p>
+        }
+      </div>
+
+      <div>
+        <label for="price" class="block text-sm font-medium text-text-primary">Preço por dia (R$)</label>
+        <input
+          id="price"
+          type="number"
+          step="0.01"
+          formControlName="price"
+          class="mt-1 w-full rounded-md border border-border-default bg-bg-surface px-3 py-2 text-sm text-text-primary"
+          data-testid="create-asset-price-input"
+        />
+        @if (isInvalid('price')) {
+          <p class="mt-1 text-sm text-error" data-testid="create-asset-price-error">
+            {{ fieldErrorMessage('price') }}
+          </p>
+        }
+      </div>
+
+      <div>
+        <label for="categoryId" class="block text-sm font-medium text-text-primary">Categoria</label>
+        <select
+          id="categoryId"
+          formControlName="categoryId"
+          class="mt-1 w-full rounded-md border border-border-default bg-bg-surface px-3 py-2 text-sm text-text-primary"
+          data-testid="create-asset-category-select"
+        >
+          <option value="">Selecione uma categoria</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+        @if (isInvalid('categoryId')) {
+          <p class="mt-1 text-sm text-error" data-testid="create-asset-category-error">
+            {{ fieldErrorMessage('categoryId') }}
+          </p>
+        }
+      </div>
+
+      <button
+        type="submit"
+        [disabled]="submitting()"
+        class="mt-2 rounded-md bg-brand-default px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover active:bg-brand-active disabled:opacity-60"
+        data-testid="create-asset-submit-button"
+      >
+        {{ submitting() ? 'Criando...' : 'Criar rascunho' }}
+      </button>
+    </form>
+  }
+
+  @if (step() === 'media') {
+    <div class="mt-6 flex flex-col gap-4" data-testid="create-asset-media-step">
+      <p class="text-sm text-text-secondary">
+        Anúncio criado como rascunho. Adicione uma foto (opcional) e depois envie para moderação.
+      </p>
+
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp,video/mp4"
+        (change)="onFileSelected($event)"
+        [disabled]="mediaUploading() || mediaUploaded()"
+        data-testid="create-asset-media-input"
+      />
+
+      @if (mediaUploading()) {
+        <p class="text-sm text-text-secondary" data-testid="create-asset-media-uploading">Enviando arquivo...</p>
+      }
+      @if (mediaError()) {
+        <p class="text-sm text-error" data-testid="create-asset-media-error">{{ mediaError() }}</p>
+      }
+      @if (mediaUploaded()) {
+        <p class="text-sm text-success" data-testid="create-asset-media-success">Foto enviada com sucesso.</p>
+      }
+
+      @if (moderationError()) {
+        <p
+          class="rounded-md border border-error-border bg-error-subtle px-4 py-3 text-sm text-error-subtle-foreground"
+          data-testid="create-asset-moderation-error"
+        >
+          {{ moderationError()?.message }}
+        </p>
+      }
+
+      <button
+        type="button"
+        [disabled]="submittingModeration()"
+        class="rounded-md bg-brand-default px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover active:bg-brand-active disabled:opacity-60"
+        data-testid="create-asset-submit-moderation-button"
+        (click)="onSubmitForModeration()"
+      >
+        {{ submittingModeration() ? 'Enviando...' : 'Enviar para moderação' }}
+      </button>
+    </div>
+  }
+
+  @if (step() === 'done') {
+    <div class="mt-6 flex flex-col gap-3" data-testid="create-asset-done-step">
+      <p class="text-sm text-text-secondary">
+        Anúncio enviado para moderação. Assim que aprovado, ficará visível no catálogo.
+      </p>
+      <a
+        [routerLink]="['/catalog', assetId()]"
+        class="text-sm font-medium text-brand-default hover:underline"
+        data-testid="create-asset-view-link"
+      >
+        Ver meu anúncio
+      </a>
+    </div>
+  }
+</div>

@@ -54,6 +54,48 @@ function seedUser({ email, password, role, status }) {
 
 seedUser({ email: 'demo@rentityx.com', password: 'Demo123!@#Demo', role: 'Renter', status: 'Active' });
 seedUser({ email: 'owner@rentityx.com', password: 'Owner123!@#Demo', role: 'Owner', status: 'Active' });
+seedUser({ email: 'admin@rentityx.com', password: 'Admin123!@#Demo', role: 'Admin', status: 'Active' });
+
+// Mock of rentifyx-asset-registry-api's public read path only (SearchAssets/ListCategories) —
+// see .specs/features/api-integration-plan/spec.md §1.2, P2. AssetStatus mirrors that repo's real
+// enum ordinals (Draft=0, PendingModeration=1, Active=2, Suspended=3, Archived=4) since that
+// backend has no JsonStringEnumConverter configured and serializes it as a number.
+const ASSET_STATUS_DRAFT = 0;
+const ASSET_STATUS_PENDING_MODERATION = 1;
+const ASSET_STATUS_ACTIVE = 2;
+const ASSET_STATUS_SUSPENDED = 3;
+const ASSET_STATUS_ARCHIVED = 4;
+// Real backend binds this enum from its name (e.g. "PendingModeration"), not its numeric value -
+// mirrors ASP.NET Core's default query-string enum model binding.
+const ASSET_STATUS_BY_NAME = {
+  Draft: ASSET_STATUS_DRAFT,
+  PendingModeration: ASSET_STATUS_PENDING_MODERATION,
+  Active: ASSET_STATUS_ACTIVE,
+  Suspended: ASSET_STATUS_SUSPENDED,
+  Archived: ASSET_STATUS_ARCHIVED,
+};
+const ALLOWED_MEDIA_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'video/mp4']);
+
+/** @type {Map<string, string>} idempotencyKey -> assetId, for CreateAsset's idempotent-replay behavior */
+const idempotencyKeys = new Map();
+
+const categories = [
+  { id: 'cat-heavy-machinery', name: 'Heavy Machinery', parentCategoryId: null, depth: 0 },
+  { id: 'cat-excavators', name: 'Excavators', parentCategoryId: 'cat-heavy-machinery', depth: 1 },
+  { id: 'cat-cranes', name: 'Cranes', parentCategoryId: 'cat-heavy-machinery', depth: 1 },
+  { id: 'cat-electronics', name: 'Electronics', parentCategoryId: null, depth: 0 },
+  { id: 'cat-vehicles', name: 'Vehicles', parentCategoryId: null, depth: 0 },
+];
+
+const MOCK_OWNER_ID = randomUUID();
+
+const assets = [
+  { id: randomUUID(), title: 'Compact Excavator CAT 305E2', description: '2022 CAT 305E2 mini excavator, 5.5t, low hours, well maintained, available for daily or weekly rental.', price: 285.0, categoryId: 'cat-excavators', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
+  { id: randomUUID(), title: 'Mini Excavator Bobcat E35', description: 'Compact Bobcat E35, ideal for tight-access sites, recently serviced.', price: 210.5, categoryId: 'cat-excavators', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
+  { id: randomUUID(), title: 'Tower Crane Liebherr 132EC-H6', description: 'High-capacity tower crane for medium to large construction sites, includes operator training.', price: 1200.0, categoryId: 'cat-cranes', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
+  { id: randomUUID(), title: 'Portable Generator 5000W', description: 'Reliable 5000W generator, quiet operation, includes fuel can.', price: 65.0, categoryId: 'cat-electronics', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
+  { id: randomUUID(), title: 'Pickup Truck Ford Ranger', description: '2023 Ford Ranger, 4x4, full tank included, daily/weekly rates.', price: 180.0, categoryId: 'cat-vehicles', ownerId: MOCK_OWNER_ID, status: ASSET_STATUS_ACTIVE, createdAt: now() },
+];
 
 function base64url(value) {
   return Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -258,6 +300,13 @@ function requireAuth(req, res, next) {
   next();
 }
 
+function requireAdmin(req, res, next) {
+  if (req.mockUser.role !== 'Admin') {
+    return sendError(res, 403, 'Requires the Admin role.');
+  }
+  next();
+}
+
 router.get('/users/me', requireAuth, (req, res) => {
   res.json(toUserResponse(req.mockUser));
 });
@@ -272,6 +321,220 @@ router.get('/users/me/data-export', requireAuth, (req, res) => {
   res.json(toDataExportResponse(req.mockUser));
 });
 
+router.get('/categories', (_req, res) => {
+  res.json(categories);
+});
+
+router.post('/categories', requireAuth, requireAdmin, (req, res) => {
+  const { name, parentCategoryId } = req.body ?? {};
+  if (!name) {
+    return sendValidation(res, 'Validation failed', { name: ['Name is required.'] });
+  }
+
+  let depth = 0;
+  if (parentCategoryId) {
+    const parent = categories.find((c) => c.id === parentCategoryId);
+    if (!parent) {
+      return sendError(res, 400, `Parent category ${parentCategoryId} not found.`);
+    }
+    depth = parent.depth + 1;
+  }
+
+  const category = { id: randomUUID(), name, parentCategoryId: parentCategoryId ?? null, depth };
+  categories.push(category);
+  res.status(201).json(category);
+});
+
+router.patch('/categories/:id', requireAuth, requireAdmin, (req, res) => {
+  const category = categories.find((c) => c.id === req.params.id);
+  if (!category) return sendError(res, 404, `Category ${req.params.id} not found.`);
+
+  const { newName, newParentCategoryId } = req.body ?? {};
+  if (newName) category.name = newName;
+  if (newParentCategoryId !== undefined) {
+    if (newParentCategoryId) {
+      const parent = categories.find((c) => c.id === newParentCategoryId);
+      if (!parent) return sendError(res, 400, `Parent category ${newParentCategoryId} not found.`);
+      category.parentCategoryId = newParentCategoryId;
+      category.depth = parent.depth + 1;
+    } else {
+      category.parentCategoryId = null;
+      category.depth = 0;
+    }
+  }
+
+  res.json(category);
+});
+
+router.get('/assets', (req, res) => {
+  const pageSize = Math.min(Math.max(Number(req.query.pageSize) || 12, 1), 30);
+  const { categoryId, minPrice, maxPrice, keyword } = req.query;
+
+  let filtered = assets;
+  if (categoryId) filtered = filtered.filter((a) => a.categoryId === categoryId);
+  if (minPrice) filtered = filtered.filter((a) => a.price >= Number(minPrice));
+  if (maxPrice) filtered = filtered.filter((a) => a.price <= Number(maxPrice));
+  if (keyword) {
+    const needle = String(keyword).toLowerCase();
+    filtered = filtered.filter((a) => a.title.toLowerCase().includes(needle));
+  }
+
+  const startIndex = req.query.nextPageToken ? Number(req.query.nextPageToken) : 0;
+  const page = filtered.slice(startIndex, startIndex + pageSize);
+  const endIndex = startIndex + page.length;
+
+  res.json({
+    // Summary shape only (id/title/price/categoryId/status) - real AssetSummaryResponse doesn't
+    // include description/ownerId/createdAt, those are GetAssetById-only fields.
+    items: page.map(({ id, title, price, categoryId, status }) => ({ id, title, price, categoryId, status })),
+    nextPageToken: endIndex < filtered.length ? String(endIndex) : null,
+  });
+});
+
+// Must come before '/assets/:id' below - Express route matching is order-sensitive and ':id'
+// would otherwise greedily match the literal segment 'admin-search'.
+router.get('/assets/admin-search', requireAuth, requireAdmin, (req, res) => {
+  const pageSize = Math.min(Math.max(Number(req.query.pageSize) || 12, 1), 30);
+  const { categoryId, minPrice, maxPrice, keyword, status } = req.query;
+
+  const statusNumber = ASSET_STATUS_BY_NAME[status] ?? Number(status);
+  let filtered = assets.filter((a) => a.status === statusNumber);
+  if (categoryId) filtered = filtered.filter((a) => a.categoryId === categoryId);
+  if (minPrice) filtered = filtered.filter((a) => a.price >= Number(minPrice));
+  if (maxPrice) filtered = filtered.filter((a) => a.price <= Number(maxPrice));
+  if (keyword) {
+    const needle = String(keyword).toLowerCase();
+    filtered = filtered.filter((a) => a.title.toLowerCase().includes(needle));
+  }
+
+  const startIndex = req.query.nextPageToken ? Number(req.query.nextPageToken) : 0;
+  const page = filtered.slice(startIndex, startIndex + pageSize);
+  const endIndex = startIndex + page.length;
+
+  res.json({
+    items: page.map(({ id, title, price, categoryId: catId, ownerId, status: assetStatus, createdAt }) => ({
+      id,
+      title,
+      price,
+      categoryId: catId,
+      ownerId,
+      status: assetStatus,
+      createdAt,
+    })),
+    nextPageToken: endIndex < filtered.length ? String(endIndex) : null,
+  });
+});
+
+router.get('/assets/:id', requireAuth, (req, res) => {
+  const asset = assets.find((a) => a.id === req.params.id);
+  if (!asset) {
+    return sendError(res, 404, `Asset ${req.params.id} not found.`);
+  }
+
+  const isOwner = asset.ownerId === req.mockUser.id;
+  const isAdmin = req.mockUser.role === 'Admin';
+  if (asset.status !== ASSET_STATUS_ACTIVE && !isOwner && !isAdmin) {
+    return sendError(res, 403, 'Not authorized to view this asset.');
+  }
+
+  res.json(asset);
+});
+
+router.post('/assets', requireAuth, (req, res) => {
+  const { title, description, price, categoryId, idempotencyKey } = req.body ?? {};
+
+  const existingAssetId = idempotencyKeys.get(idempotencyKey);
+  if (existingAssetId) {
+    const existing = assets.find((a) => a.id === existingAssetId);
+    if (existing) {
+      return res.status(201).json({ assetId: existing.id, status: existing.status, createdAt: existing.createdAt });
+    }
+  }
+
+  const errors = {};
+  if (!title || title.length < 3 || title.length > 100) errors.title = ['Title must be 3-100 characters.'];
+  if (!description || description.length < 10 || description.length > 2000) errors.description = ['Description must be 10-2000 characters.'];
+  if (!categoryId) errors.categoryId = ['Category is required.'];
+  if (Object.keys(errors).length > 0) {
+    return sendValidation(res, 'Validation failed', errors);
+  }
+
+  const asset = {
+    id: randomUUID(),
+    title,
+    description,
+    price: Number(price),
+    categoryId,
+    ownerId: req.mockUser.id,
+    status: ASSET_STATUS_DRAFT,
+    createdAt: now(),
+  };
+  assets.push(asset);
+  idempotencyKeys.set(idempotencyKey, asset.id);
+
+  res.status(201).json({ assetId: asset.id, status: asset.status, createdAt: asset.createdAt });
+});
+
+router.post('/assets/:id/media/upload-request', requireAuth, (req, res) => {
+  const asset = assets.find((a) => a.id === req.params.id);
+  if (!asset) return sendError(res, 404, `Asset ${req.params.id} not found.`);
+  if (asset.ownerId !== req.mockUser.id) return sendError(res, 403, 'Not authorized to upload media for this asset.');
+
+  const { mimeType, sizeBytes } = req.body ?? {};
+  if (!ALLOWED_MEDIA_MIME_TYPES.has(mimeType)) {
+    return sendValidation(res, 'Validation failed', { mimeType: ['Unsupported MIME type.'] });
+  }
+  if (!sizeBytes || sizeBytes <= 0) {
+    return sendValidation(res, 'Validation failed', { sizeBytes: ['Size must be positive.'] });
+  }
+
+  const s3Key = `assets/${asset.id}/media/${randomUUID()}`;
+  res.json({ uploadUrl: `http://localhost:${PORT}/api/v1/mock-s3/${encodeURIComponent(s3Key)}`, s3Key });
+});
+
+// Stands in for a real presigned S3 PUT - accepts any body, always succeeds.
+router.put('/mock-s3/*splat', (req, res) => {
+  res.status(200).send();
+});
+
+router.post('/assets/:id/media/confirm', requireAuth, (req, res) => {
+  const asset = assets.find((a) => a.id === req.params.id);
+  if (!asset) return sendError(res, 404, `Asset ${req.params.id} not found.`);
+  if (asset.ownerId !== req.mockUser.id) return sendError(res, 403, 'Not authorized to confirm media for this asset.');
+
+  const { s3Key } = req.body ?? {};
+  asset.mediaS3Key = s3Key;
+  res.json({ assetId: asset.id, s3Key });
+});
+
+router.post('/assets/:id/submit-for-moderation', requireAuth, (req, res) => {
+  const asset = assets.find((a) => a.id === req.params.id);
+  if (!asset) return sendError(res, 404, `Asset ${req.params.id} not found.`);
+  if (asset.ownerId !== req.mockUser.id) return sendError(res, 403, 'Only the owner may submit this asset.');
+  if (asset.status !== ASSET_STATUS_DRAFT) {
+    return sendError(res, 400, 'Asset must be in Draft status to submit for moderation.');
+  }
+
+  asset.status = ASSET_STATUS_PENDING_MODERATION;
+  res.json({ assetId: asset.id, status: asset.status });
+});
+
+router.post('/assets/:id/admin-review', requireAuth, requireAdmin, (req, res) => {
+  const asset = assets.find((a) => a.id === req.params.id);
+  if (!asset) return sendError(res, 404, `Asset ${req.params.id} not found.`);
+  if (asset.status !== ASSET_STATUS_PENDING_MODERATION) {
+    return sendValidation(res, 'Validation failed', {
+      status: [`Asset must be in 'PendingModeration' status. Current status is '${asset.status}'.`],
+    });
+  }
+
+  const { approve } = req.body ?? {};
+  // Matches the real AdminReviewAssetHandler: reject archives the asset (terminal), it does not
+  // revert to Draft despite that endpoint's own stale doc comment saying otherwise.
+  asset.status = approve ? ASSET_STATUS_ACTIVE : ASSET_STATUS_ARCHIVED;
+  res.json({ assetId: asset.id, status: asset.status });
+});
+
 app.use('/api/v1', router);
 
 app.use((req, res) => {
@@ -283,5 +546,6 @@ app.listen(PORT, () => {
   console.log('Seeded users:');
   console.log('  demo@rentityx.com  / Demo123!@#Demo   (Renter, Active)');
   console.log('  owner@rentityx.com / Owner123!@#Demo  (Owner, Active)');
+  console.log('  admin@rentityx.com / Admin123!@#Demo  (Admin, Active)');
   console.log('Register/forgot-password links are logged here instead of being emailed.\n');
 });

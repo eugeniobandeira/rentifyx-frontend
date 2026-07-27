@@ -8,10 +8,12 @@ import { iValidationErrorResponse } from '@shared/interfaces/validation-error-re
 const RATE_LIMIT_MESSAGE = 'Too many attempts — try again shortly';
 const NETWORK_ERROR_MESSAGE = "Couldn't reach the server, check your connection";
 const SERVER_ERROR_MESSAGE = 'Something went wrong, try again';
+const FORBIDDEN_MESSAGE = "You don't have permission to do that";
 
 const STATUS_KIND_MAP: Record<number, HttpErrorKind> = {
   400: 'bad-request',
   401: 'unauthorized',
+  403: 'forbidden',
   404: 'not-found',
   409: 'conflict',
   422: 'validation',
@@ -53,7 +55,8 @@ function _classify(error: HttpErrorResponse): iClassifiedHttpError {
   }
 
   const body = error.error as iApiErrorResponse | null;
-  const message = kind === 'rate-limit' ? RATE_LIMIT_MESSAGE : (body?.title ?? SERVER_ERROR_MESSAGE);
+  const fallbackMessage = kind === 'forbidden' ? FORBIDDEN_MESSAGE : SERVER_ERROR_MESSAGE;
+  const message = kind === 'rate-limit' ? RATE_LIMIT_MESSAGE : (body?.title ?? fallbackMessage);
 
   return {
     kind,

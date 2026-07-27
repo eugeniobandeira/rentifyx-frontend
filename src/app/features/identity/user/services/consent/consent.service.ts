@@ -9,7 +9,7 @@ import { ConsentPurpose } from '../../types/consent-purpose';
 @Injectable({ providedIn: 'root' })
 export class ConsentService {
   private readonly _http = inject(HttpClient);
-  private readonly _API_URL = `${environment.apiUrl}/users/me/consent`;
+  private readonly _API_URL = `${environment.identityApiUrl}/users/me/consent`;
 
   getConsent(): Observable<iConsentResponse> {
     return this._http.get<iConsentResponse>(this._API_URL);

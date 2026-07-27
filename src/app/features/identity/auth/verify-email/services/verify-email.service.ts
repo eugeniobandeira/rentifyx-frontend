@@ -8,7 +8,7 @@ import { iVerifyEmailRequest } from '../interfaces/verify-email-request';
 @Injectable({ providedIn: 'root' })
 export class VerifyEmailService {
   private readonly _baseHttp = inject(BaseHttpService);
-  private readonly _API_URL = `${environment.apiUrl}/auth/verify-email`;
+  private readonly _API_URL = `${environment.identityApiUrl}/auth/verify-email`;
 
   verifyEmail(request: iVerifyEmailRequest): Observable<iUserResponse> {
     return this._baseHttp.post<iUserResponse, iVerifyEmailRequest>(this._API_URL, request, {

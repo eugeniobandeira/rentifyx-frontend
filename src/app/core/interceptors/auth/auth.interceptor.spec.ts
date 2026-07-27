@@ -5,6 +5,10 @@ import { of, throwError } from 'rxjs';
 import { authInterceptor } from './auth.interceptor';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
+import { environment } from '@app/environment/environment';
+
+const AUTH_BASE_URL = `${environment.identityApiUrl}/auth`;
+const USERS_ME_URL = `${environment.identityApiUrl}/users/me`;
 
 const user: iUserResponse = {
   id: 'user-1',
@@ -51,9 +55,9 @@ describe('authInterceptor', () => {
   });
 
   it('attaches Authorization: Bearer {token} to non-auth requests', () => {
-    http.get('http://localhost:5000/api/v1/users/me').subscribe();
+    http.get(`${USERS_ME_URL}`).subscribe();
 
-    const req = httpMock.expectOne('http://localhost:5000/api/v1/users/me');
+    const req = httpMock.expectOne(`${USERS_ME_URL}`);
     expect(req.request.headers.get('Authorization')).toBe('Bearer access-token');
     req.flush(user);
   });
@@ -70,8 +74,8 @@ describe('authInterceptor', () => {
     ];
 
     for (const endpoint of endpoints) {
-      http.post(`http://localhost:5000/api/v1/auth/${endpoint}`, {}).subscribe();
-      const req = httpMock.expectOne(`http://localhost:5000/api/v1/auth/${endpoint}`);
+      http.post(`${AUTH_BASE_URL}/${endpoint}`, {}).subscribe();
+      const req = httpMock.expectOne(`${AUTH_BASE_URL}/${endpoint}`);
       expect(req.request.headers.has('Authorization')).toBe(false);
       req.flush(null);
     }
@@ -84,15 +88,15 @@ describe('authInterceptor', () => {
       .mockReturnValueOnce('expired-token')
       .mockReturnValue('new-token');
 
-    http.get('http://localhost:5000/api/v1/users/me').subscribe((response) => expect(response).toEqual(user));
+    http.get(`${USERS_ME_URL}`).subscribe((response) => expect(response).toEqual(user));
 
-    const firstReq = httpMock.expectOne('http://localhost:5000/api/v1/users/me');
+    const firstReq = httpMock.expectOne(`${USERS_ME_URL}`);
     expect(firstReq.request.headers.get('Authorization')).toBe('Bearer expired-token');
     firstReq.flush(null, { status: 401, statusText: 'Unauthorized' });
 
     expect(mockSessionService.refresh).toHaveBeenCalledTimes(1);
 
-    const retryReq = httpMock.expectOne('http://localhost:5000/api/v1/users/me');
+    const retryReq = httpMock.expectOne(`${USERS_ME_URL}`);
     expect(retryReq.request.headers.get('Authorization')).toBe('Bearer new-token');
     retryReq.flush(user);
   });
@@ -101,27 +105,27 @@ describe('authInterceptor', () => {
     mockSessionService.refresh.mockReturnValue(throwError(() => new Error('refresh failed')));
 
     let caughtError: unknown;
-    http.get('http://localhost:5000/api/v1/users/me').subscribe({
+    http.get(`${USERS_ME_URL}`).subscribe({
       next: () => expect.unreachable('expected an error'),
       error: (error) => (caughtError = error),
     });
 
-    const req = httpMock.expectOne('http://localhost:5000/api/v1/users/me');
+    const req = httpMock.expectOne(`${USERS_ME_URL}`);
     req.flush(null, { status: 401, statusText: 'Unauthorized' });
 
     expect(mockSessionService.refresh).toHaveBeenCalledTimes(1);
     expect(caughtError).toBeDefined();
-    httpMock.expectNone('http://localhost:5000/api/v1/users/me');
+    httpMock.expectNone(`${USERS_ME_URL}`);
   });
 
   it('on 401 from /auth/refresh itself, does not attempt another refresh', () => {
     let caughtError: unknown;
-    http.post('http://localhost:5000/api/v1/auth/refresh', {}).subscribe({
+    http.post(`${AUTH_BASE_URL}/refresh`, {}).subscribe({
       next: () => expect.unreachable('expected an error'),
       error: (error) => (caughtError = error),
     });
 
-    const req = httpMock.expectOne('http://localhost:5000/api/v1/auth/refresh');
+    const req = httpMock.expectOne(`${AUTH_BASE_URL}/refresh`);
     req.flush(null, { status: 401, statusText: 'Unauthorized' });
 
     expect(mockSessionService.refresh).not.toHaveBeenCalled();
@@ -130,24 +134,35 @@ describe('authInterceptor', () => {
 
   it('on 401 from another /auth/* endpoint (e.g. login), does not attempt refresh', () => {
     let caughtError: unknown;
-    http.post('http://localhost:5000/api/v1/auth/login', {}).subscribe({
+    http.post(`${AUTH_BASE_URL}/login`, {}).subscribe({
       next: () => expect.unreachable('expected an error'),
       error: (error) => (caughtError = error),
     });
 
-    const req = httpMock.expectOne('http://localhost:5000/api/v1/auth/login');
+    const req = httpMock.expectOne(`${AUTH_BASE_URL}/login`);
     req.flush(null, { status: 401, statusText: 'Unauthorized' });
 
     expect(mockSessionService.refresh).not.toHaveBeenCalled();
     expect(caughtError).toBeDefined();
   });
 
+  it('does not attach a token to a request to an unknown host (e.g. a direct-to-S3 upload)', () => {
+    http.put('https://rentifyx-media.s3.amazonaws.com/assets/photo.jpg?X-Amz-Signature=abc', {}).subscribe();
+
+    const req = httpMock.expectOne(
+      'https://rentifyx-media.s3.amazonaws.com/assets/photo.jpg?X-Amz-Signature=abc',
+    );
+    expect(req.request.headers.has('Authorization')).toBe(false);
+    expect(mockSessionService.accessToken).not.toHaveBeenCalled();
+    req.flush(null);
+  });
+
   it('does not attach an Authorization header when there is no access token', () => {
     mockSessionService.accessToken.mockReturnValue(null);
 
-    http.get('http://localhost:5000/api/v1/users/me').subscribe();
+    http.get(`${USERS_ME_URL}`).subscribe();
 
-    const req = httpMock.expectOne('http://localhost:5000/api/v1/users/me');
+    const req = httpMock.expectOne(`${USERS_ME_URL}`);
     expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush(user);
   });

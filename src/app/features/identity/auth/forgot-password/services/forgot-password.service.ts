@@ -7,7 +7,7 @@ import { iForgotPasswordRequest } from '../interfaces/forgot-password-request';
 @Injectable({ providedIn: 'root' })
 export class ForgotPasswordService {
   private readonly _baseHttp = inject(BaseHttpService);
-  private readonly _API_URL = `${environment.apiUrl}/auth/forgot-password`;
+  private readonly _API_URL = `${environment.identityApiUrl}/auth/forgot-password`;
 
   forgotPassword(request: iForgotPasswordRequest): Observable<void> {
     return this._baseHttp.post<void, iForgotPasswordRequest>(this._API_URL, request, {

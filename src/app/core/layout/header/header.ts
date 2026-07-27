@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { ThemeService } from '@core/services/theme.service';
@@ -16,6 +16,7 @@ export class Header {
 
   protected readonly isAuthenticated = this._sessionService.isAuthenticated;
   protected readonly isRestoringSession = this._sessionService.isRestoringSession;
+  protected readonly isAdmin = computed(() => this._sessionService.currentUser()?.role === 'Admin');
 
   protected logout(): void {
     this._sessionService.logout().subscribe();
