@@ -1,10 +1,89 @@
-<footer
-  class="border-t border-border-default px-4 py-6 text-center text-sm text-text-muted sm:px-6"
-  data-testid="footer"
->
-  <span data-testid="footer-copyright">© RentityX {{ currentYear }}</span>
-  <span class="mx-2">·</span>
-  <span data-testid="footer-terms">Termos</span>
-  <span class="mx-2">·</span>
-  <span data-testid="footer-privacy">Privacidade</span>
+<footer class="bg-slate-900 px-4 pt-10 pb-6 text-slate-300 sm:px-6 sm:pt-14" data-testid="footer">
+  <div class="mx-auto grid max-w-6xl grid-cols-1 gap-10 sm:grid-cols-3">
+    <div>
+      <span class="text-lg font-semibold text-white" data-testid="footer-brand">RentityX</span>
+      <p class="mt-3 max-w-xs text-sm text-slate-400" data-testid="footer-tagline">
+        Alugue tudo. Viva mais.
+      </p>
+      <a
+        routerLink="/support"
+        class="mt-5 inline-flex items-center gap-2 rounded-md border border-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+        data-testid="footer-support-link"
+      >
+        Suporte
+      </a>
+    </div>
+
+    <div>
+      <h3 class="text-xs font-semibold tracking-wider text-slate-400 uppercase" data-testid="footer-legal-heading">
+        Legal
+      </h3>
+      <ul class="mt-3 flex flex-col gap-2 border-t border-slate-800 pt-3">
+        <li>
+          <a routerLink="/terms" class="text-sm hover:text-white" data-testid="footer-terms">Termos</a>
+        </li>
+        <li>
+          <a routerLink="/privacy" class="text-sm hover:text-white" data-testid="footer-privacy">Privacidade</a>
+        </li>
+        <li>
+          <a routerLink="/refund" class="text-sm hover:text-white" data-testid="footer-refund">Reembolso</a>
+        </li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="text-xs font-semibold tracking-wider text-slate-400 uppercase" data-testid="footer-resources-heading">
+        Recursos
+      </h3>
+      <ul class="mt-3 flex flex-col gap-2 border-t border-slate-800 pt-3">
+        <li>
+          <a routerLink="/help" class="text-sm hover:text-white" data-testid="footer-help">Central de ajuda</a>
+        </li>
+        <li>
+          <a
+            routerLink="/how-to-cancel"
+            class="text-sm hover:text-white"
+            data-testid="footer-how-to-cancel"
+          >
+            Como cancelar
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div
+    class="mx-auto mt-10 flex max-w-6xl flex-col gap-3 border-t border-slate-800 pt-6 sm:flex-row sm:items-center sm:justify-between"
+  >
+    <span class="text-xs text-slate-500" data-testid="footer-copyright">
+      © RentityX {{ currentYear }}. Todos os direitos reservados.
+    </span>
+
+    <div class="flex items-center gap-3">
+      <a
+        routerLink="/"
+        aria-label="Facebook"
+        class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 text-slate-400 hover:text-white"
+        data-testid="footer-facebook-link"
+      >
+        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
+          <path
+            d="M13.5 21v-7.5H16l.5-3H13.5V8.25c0-.87.24-1.46 1.49-1.46H16.5V4.14C16.24 4.1 15.36 4 14.33 4 12.17 4 10.7 5.32 10.7 7.7v2.8H8.2v3h2.5V21h2.8Z"
+          />
+        </svg>
+      </a>
+      <a
+        routerLink="/"
+        aria-label="Instagram"
+        class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 text-slate-400 hover:text-white"
+        data-testid="footer-instagram-link"
+      >
+        <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
+          <path
+            d="M12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Zm0 6.15a2.4 2.4 0 1 1 0-4.8 2.4 2.4 0 0 1 0 4.8ZM16.2 4H7.8A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4Zm2.45 12.2a2.45 2.45 0 0 1-2.45 2.45H7.8a2.45 2.45 0 0 1-2.45-2.45V7.8A2.45 2.45 0 0 1 7.8 5.35h8.4a2.45 2.45 0 0 1 2.45 2.45v8.4ZM16.65 7.3a.9.9 0 1 1-1.8 0 .9.9 0 0 1 1.8 0Z"
+          />
+        </svg>
+      </a>
+    </div>
+  </div>
 </footer>
