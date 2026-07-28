@@ -1,10 +1,10 @@
 <div class="mx-auto max-w-3xl px-4 py-8 sm:py-12" data-testid="asset-detail-page">
   <a routerLink="/catalog" class="text-sm font-medium text-brand-default hover:underline" data-testid="asset-detail-back-link">
-    ← Voltar ao catálogo
+    {{ 'detail.backLink' | translate }}
   </a>
 
   @if (loading()) {
-    <p class="mt-8 text-sm text-text-secondary" data-testid="asset-detail-loading">Carregando...</p>
+    <p class="mt-8 text-sm text-text-secondary" data-testid="asset-detail-loading">{{ 'detail.loading' | translate }}</p>
   } @else if (error()) {
     <p
       class="mt-8 rounded-md border border-error-border bg-error-subtle px-4 py-3 text-sm text-error-subtle-foreground"
@@ -27,11 +27,11 @@
       </h1>
 
       <p class="mt-1 text-sm text-text-muted" data-testid="asset-detail-status">
-        {{ getAssetStatusLabel(asset.status) }}
+        {{ getAssetStatusLabelKey(asset.status) | translate }}
       </p>
 
       <p class="mt-4 text-lg font-semibold text-text-primary" data-testid="asset-detail-price">
-        R$ {{ asset.price | number: '1.2-2' }} / dia
+        R$ {{ asset.price | number: '1.2-2' }} {{ 'detail.perDay' | translate }}
       </p>
 
       <p class="mt-4 whitespace-pre-line text-sm text-text-secondary" data-testid="asset-detail-description">

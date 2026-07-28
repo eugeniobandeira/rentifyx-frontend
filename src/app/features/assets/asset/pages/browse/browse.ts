@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { CategoryService } from '@features/assets/category/services/category.service';
 import { iCategoryResponse } from '@features/assets/category/interfaces/category-response';
 import { AssetService } from '@features/assets/asset/services/asset.service';
@@ -15,7 +16,7 @@ const PAGE_SIZE = 12;
 @Component({
   selector: 'app-browse-assets',
   standalone: true,
-  imports: [FormsModule, DecimalPipe, RouterLink],
+  imports: [FormsModule, DecimalPipe, RouterLink, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './browse.html',
 })

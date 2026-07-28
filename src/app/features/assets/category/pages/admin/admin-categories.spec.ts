@@ -3,6 +3,7 @@ import { of, throwError } from 'rxjs';
 import { CategoryService } from '@features/assets/category/services/category.service';
 import { iCategoryResponse } from '@features/assets/category/interfaces/category-response';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { AdminCategoriesPage } from './admin-categories';
 
 const categories: iCategoryResponse[] = [
@@ -26,7 +27,7 @@ describe('AdminCategoriesPage', () => {
 
     TestBed.configureTestingModule({
       imports: [AdminCategoriesPage],
-      providers: [{ provide: CategoryService, useValue: categoryService }],
+      providers: [provideTestTranslate(), { provide: CategoryService, useValue: categoryService }],
     });
 
     const fixture = TestBed.createComponent(AdminCategoriesPage);

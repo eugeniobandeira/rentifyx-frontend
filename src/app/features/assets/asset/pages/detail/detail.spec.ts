@@ -6,6 +6,7 @@ import { CategoryService } from '@features/assets/category/services/category.ser
 import { iGetAssetByIdResponse } from '@features/assets/asset/interfaces/get-asset-by-id-response';
 import { iCategoryResponse } from '@features/assets/category/interfaces/category-response';
 import { AssetStatus } from '@features/assets/asset/types/asset-status';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { AssetDetailPage } from './detail';
 
 const asset: iGetAssetByIdResponse = {
@@ -31,6 +32,7 @@ describe('AssetDetailPage', () => {
     TestBed.configureTestingModule({
       imports: [AssetDetailPage],
       providers: [
+        provideTestTranslate(),
         { provide: AssetService, useValue: assetService },
         { provide: CategoryService, useValue: categoryService },
         {

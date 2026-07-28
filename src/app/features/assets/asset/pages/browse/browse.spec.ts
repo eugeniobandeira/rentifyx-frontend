@@ -7,6 +7,7 @@ import { AssetService } from '@features/assets/asset/services/asset.service';
 import { iSearchAssetsResponse } from '@features/assets/asset/interfaces/search-assets-response';
 import { AssetStatus } from '@features/assets/asset/types/asset-status';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { BrowseAssetsPage } from './browse';
 
 const categories: iCategoryResponse[] = [
@@ -36,6 +37,7 @@ describe('BrowseAssetsPage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
+        provideTestTranslate(),
         { provide: SessionService, useValue: { isAuthenticated: () => false } },
         { provide: CategoryService, useValue: categoryService },
         { provide: AssetService, useValue: assetService },
@@ -96,6 +98,7 @@ describe('BrowseAssetsPage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
+        provideTestTranslate(),
         { provide: SessionService, useValue: { isAuthenticated: () => false } },
         { provide: CategoryService, useValue: categoryService },
         { provide: AssetService, useValue: assetService },

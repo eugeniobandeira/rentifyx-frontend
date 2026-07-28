@@ -9,6 +9,7 @@ import { iCreateAssetResponse } from '@features/assets/asset/interfaces/create-a
 import { iAssetModerationResponse } from '@features/assets/asset/interfaces/asset-moderation-response';
 import { AssetStatus } from '@features/assets/asset/types/asset-status';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { CreateAssetPage } from './create';
 
 const categories: iCategoryResponse[] = [
@@ -43,6 +44,9 @@ describe('CreateAssetPage', () => {
       imports: [CreateAssetPage],
       providers: [
         provideRouter([]),
+        provideTestTranslate({
+          create: { unsupportedMediaFormat: 'Formato não suportado. Use JPEG, PNG, WEBP ou MP4.' },
+        }),
         { provide: AssetService, useValue: assetService },
         { provide: CategoryService, useValue: categoryService },
         { provide: MediaUploadService, useValue: mediaUploadService },

@@ -1,6 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AssetService } from '@features/assets/asset/services/asset.service';
 import { CategoryService } from '@features/assets/category/services/category.service';
 import { iCategoryResponse } from '@features/assets/category/interfaces/category-response';
@@ -19,7 +20,7 @@ const PAGE_SIZE = 12;
 @Component({
   selector: 'app-admin-review-asset',
   standalone: true,
-  imports: [FormsModule, DecimalPipe],
+  imports: [FormsModule, DecimalPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-review.html',
 })

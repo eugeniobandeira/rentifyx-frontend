@@ -8,6 +8,7 @@ import { iGetAssetByIdResponse } from '@features/assets/asset/interfaces/get-ass
 import { iAssetModerationResponse } from '@features/assets/asset/interfaces/asset-moderation-response';
 import { AssetStatus } from '@features/assets/asset/types/asset-status';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { AdminReviewAssetPage } from './admin-review';
 
 const categories: iCategoryResponse[] = [
@@ -59,6 +60,7 @@ describe('AdminReviewAssetPage', () => {
     TestBed.configureTestingModule({
       imports: [AdminReviewAssetPage],
       providers: [
+        provideTestTranslate(),
         { provide: AssetService, useValue: assetService },
         { provide: CategoryService, useValue: categoryService },
       ],

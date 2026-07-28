@@ -1,8 +1,8 @@
 <div class="mx-auto max-w-6xl px-4 py-8 sm:py-12" data-testid="browse-assets-page">
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h1 class="text-2xl font-semibold text-text-primary sm:text-3xl">Catálogo</h1>
-      <p class="mt-2 text-sm text-text-secondary">Encontre itens disponíveis para aluguel.</p>
+      <h1 class="text-2xl font-semibold text-text-primary sm:text-3xl">{{ 'browse.title' | translate }}</h1>
+      <p class="mt-2 text-sm text-text-secondary">{{ 'browse.subtitle' | translate }}</p>
     </div>
     @if (isAuthenticated()) {
       <a
@@ -10,7 +10,7 @@
         class="rounded-md bg-brand-default px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover active:bg-brand-active"
         data-testid="browse-create-asset-link"
       >
-        Anunciar item
+        {{ 'browse.createAssetLink' | translate }}
       </a>
     }
   </div>
@@ -26,7 +26,7 @@
       name="categoryId"
       [(ngModel)]="categoryId"
     >
-      <option value="">Todas as categorias</option>
+      <option value="">{{ 'browse.categoryAllOption' | translate }}</option>
       @for (category of categories(); track category.id) {
         <option [value]="category.id">{{ category.name }}</option>
       }
@@ -37,7 +37,7 @@
       data-testid="browse-keyword-input"
       type="text"
       name="keyword"
-      placeholder="Buscar por palavra-chave"
+      [attr.placeholder]="'browse.keywordPlaceholder' | translate"
       [(ngModel)]="keyword"
     />
 
@@ -46,7 +46,7 @@
       data-testid="browse-min-price-input"
       type="number"
       name="minPrice"
-      placeholder="Preço mínimo"
+      [attr.placeholder]="'browse.minPricePlaceholder' | translate"
       [(ngModel)]="minPrice"
     />
 
@@ -55,7 +55,7 @@
       data-testid="browse-max-price-input"
       type="number"
       name="maxPrice"
-      placeholder="Preço máximo"
+      [attr.placeholder]="'browse.maxPricePlaceholder' | translate"
       [(ngModel)]="maxPrice"
     />
 
@@ -64,19 +64,19 @@
       class="rounded-md bg-brand-default px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover active:bg-brand-active"
       data-testid="browse-search-submit-button"
     >
-      Buscar
+      {{ 'browse.searchSubmitButton' | translate }}
     </button>
   </form>
 
   @if (loading()) {
-    <p class="mt-8 text-sm text-text-secondary" data-testid="browse-loading">Carregando...</p>
+    <p class="mt-8 text-sm text-text-secondary" data-testid="browse-loading">{{ 'browse.loading' | translate }}</p>
   } @else if (error()) {
     <p class="mt-8 rounded-md border border-error-border bg-error-subtle px-4 py-3 text-sm text-error-subtle-foreground" data-testid="browse-error-banner">
       {{ error()?.message }}
     </p>
   } @else if (items().length === 0) {
     <p class="mt-8 text-sm text-text-secondary" data-testid="browse-empty-state">
-      Nenhum item encontrado para os filtros selecionados.
+      {{ 'browse.emptyState' | translate }}
     </p>
   } @else {
     <div
@@ -100,7 +100,7 @@
             {{ asset.title }}
           </h2>
           <p class="mt-1 text-sm text-text-secondary" data-testid="browse-asset-price">
-            R$ {{ asset.price | number: '1.2-2' }} / dia
+            R$ {{ asset.price | number: '1.2-2' }} {{ 'browse.perDay' | translate }}
           </p>
         </a>
       }
@@ -115,7 +115,7 @@
           [disabled]="loadingMore()"
           (click)="onLoadMore()"
         >
-          {{ loadingMore() ? 'Carregando...' : 'Carregar mais' }}
+          {{ (loadingMore() ? 'browse.loadMoreLoadingButton' : 'browse.loadMoreButton') | translate }}
         </button>
       </div>
     }

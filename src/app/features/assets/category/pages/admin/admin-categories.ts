@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { CategoryService } from '@features/assets/category/services/category.service';
 import { iCategoryResponse } from '@features/assets/category/interfaces/category-response';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
@@ -7,7 +8,7 @@ import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 @Component({
   selector: 'app-admin-categories',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './admin-categories.html',
 })

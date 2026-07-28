@@ -1,13 +1,13 @@
 import { AssetStatus } from '../types/asset-status';
 
-const LABELS: Record<AssetStatus, string> = {
-  [AssetStatus.Draft]: 'Rascunho',
-  [AssetStatus.PendingModeration]: 'Em moderação',
-  [AssetStatus.Active]: 'Disponível',
-  [AssetStatus.Suspended]: 'Suspenso',
-  [AssetStatus.Archived]: 'Arquivado',
+const KEYS: Record<AssetStatus, string> = {
+  [AssetStatus.Draft]: 'detail.status.draft',
+  [AssetStatus.PendingModeration]: 'detail.status.pendingModeration',
+  [AssetStatus.Active]: 'detail.status.active',
+  [AssetStatus.Suspended]: 'detail.status.suspended',
+  [AssetStatus.Archived]: 'detail.status.archived',
 };
 
-export function getAssetStatusLabel(status: AssetStatus): string {
-  return LABELS[status] ?? 'Desconhecido';
+export function getAssetStatusLabelKey(status: AssetStatus): string {
+  return KEYS[status] ?? 'detail.status.unknown';
 }

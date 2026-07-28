@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { switchMap } from 'rxjs';
 import { AssetService } from '@features/assets/asset/services/asset.service';
 import { CategoryService } from '@features/assets/category/services/category.service';
@@ -17,7 +18,7 @@ type Step = 'form' | 'media' | 'moderation' | 'done';
 @Component({
   selector: 'app-create-asset',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './create.html',
 })
@@ -25,6 +26,7 @@ export class CreateAssetPage {
   private readonly _assetService = inject(AssetService);
   private readonly _categoryService = inject(CategoryService);
   private readonly _mediaUploadService = inject(MediaUploadService);
+  private readonly _translate = inject(TranslateService);
 
   protected readonly categories = signal<iCategoryResponse[]>([]);
   protected readonly step = signal<Step>('form');
@@ -103,7 +105,7 @@ export class CreateAssetPage {
     this.mediaError.set(null);
 
     if (!ALLOWED_MEDIA_MIME_TYPES.has(file.type)) {
-      this.mediaError.set('Formato não suportado. Use JPEG, PNG, WEBP ou MP4.');
+      this.mediaError.set(this._translate.instant('create.unsupportedMediaFormat'));
       return;
     }
 

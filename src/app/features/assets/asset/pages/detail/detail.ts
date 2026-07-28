@@ -1,17 +1,18 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink, ActivatedRoute } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AssetService } from '@features/assets/asset/services/asset.service';
 import { CategoryService } from '@features/assets/category/services/category.service';
 import { iGetAssetByIdResponse } from '@features/assets/asset/interfaces/get-asset-by-id-response';
-import { getAssetStatusLabel } from '@features/assets/asset/constants/asset-status-label.map';
+import { getAssetStatusLabelKey } from '@features/assets/asset/constants/asset-status-label.map';
 import { getCategorySlot } from '@shared/constants/category-color.map';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 
 @Component({
   selector: 'app-asset-detail',
   standalone: true,
-  imports: [DecimalPipe, RouterLink],
+  imports: [DecimalPipe, RouterLink, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './detail.html',
 })
@@ -25,7 +26,7 @@ export class AssetDetailPage {
   protected readonly loading = signal(true);
   protected readonly error = signal<iClassifiedHttpError | null>(null);
 
-  protected readonly getAssetStatusLabel = getAssetStatusLabel;
+  protected readonly getAssetStatusLabelKey = getAssetStatusLabelKey;
 
   constructor() {
     const id = this._route.snapshot.paramMap.get('id');

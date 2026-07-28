@@ -1,0 +1,75 @@
+{
+  "browse": {
+    "title": "Catalog",
+    "subtitle": "Find items available for rent.",
+    "createAssetLink": "List an item",
+    "categoryAllOption": "All categories",
+    "keywordPlaceholder": "Search by keyword",
+    "minPricePlaceholder": "Minimum price",
+    "maxPricePlaceholder": "Maximum price",
+    "searchSubmitButton": "Search",
+    "loading": "Loading...",
+    "emptyState": "No items found for the selected filters.",
+    "perDay": "/ day",
+    "loadMoreButton": "Load more",
+    "loadMoreLoadingButton": "Loading..."
+  },
+  "detail": {
+    "backLink": "← Back to catalog",
+    "loading": "Loading...",
+    "perDay": "/ day",
+    "status": {
+      "draft": "Draft",
+      "pendingModeration": "Under review",
+      "active": "Available",
+      "suspended": "Suspended",
+      "archived": "Archived",
+      "unknown": "Unknown"
+    }
+  },
+  "create": {
+    "title": "List an item",
+    "titleLabel": "Title",
+    "descriptionLabel": "Description",
+    "priceLabel": "Price per day (R$)",
+    "categoryLabel": "Category",
+    "categoryPlaceholderOption": "Select a category",
+    "submitButton": "Create draft",
+    "submitButtonLoading": "Creating...",
+    "mediaStepDescription": "Listing created as a draft. Add a photo (optional) and then submit it for moderation.",
+    "mediaUploading": "Uploading file...",
+    "mediaUploadSuccess": "Photo uploaded successfully.",
+    "unsupportedMediaFormat": "Unsupported format. Use JPEG, PNG, WEBP or MP4.",
+    "submitModerationButton": "Submit for moderation",
+    "submitModerationButtonLoading": "Submitting...",
+    "doneDescription": "Listing submitted for moderation. Once approved, it will be visible in the catalog.",
+    "viewAssetLink": "View my listing"
+  },
+  "adminReview": {
+    "title": "Review listings",
+    "subtitle": "Listings awaiting moderation.",
+    "loading": "Loading...",
+    "queueEmpty": "No listings awaiting moderation.",
+    "perDay": "/ day",
+    "loadMoreButton": "Load more",
+    "loadMoreLoadingButton": "Loading...",
+    "selecting": "Loading listing...",
+    "reasonLabel": "Reason (optional)",
+    "approveButton": "Approve",
+    "rejectButton": "Reject (archives the listing)",
+    "noSelection": "Select a listing from the list to review."
+  },
+  "adminCategories": {
+    "title": "Categories",
+    "createHeading": "New category",
+    "newNamePlaceholder": "Category name",
+    "rootCategoryOption": "Root category (no parent)",
+    "createButton": "Create category",
+    "createButtonLoading": "Creating...",
+    "loading": "Loading...",
+    "saveButton": "Save",
+    "saveButtonLoading": "Saving...",
+    "cancelButton": "Cancel",
+    "editButton": "Edit"
+  }
+}

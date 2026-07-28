@@ -1,5 +1,5 @@
 <div class="mx-auto max-w-xl px-4 py-8 sm:py-12" data-testid="create-asset-page">
-  <h1 class="text-2xl font-semibold text-text-primary sm:text-3xl">Anunciar item</h1>
+  <h1 class="text-2xl font-semibold text-text-primary sm:text-3xl">{{ 'create.title' | translate }}</h1>
 
   @if (step() === 'form') {
     <form
@@ -18,7 +18,7 @@
       }
 
       <div>
-        <label for="title" class="block text-sm font-medium text-text-primary">Título</label>
+        <label for="title" class="block text-sm font-medium text-text-primary">{{ 'create.titleLabel' | translate }}</label>
         <input
           id="title"
           type="text"
@@ -34,7 +34,7 @@
       </div>
 
       <div>
-        <label for="description" class="block text-sm font-medium text-text-primary">Descrição</label>
+        <label for="description" class="block text-sm font-medium text-text-primary">{{ 'create.descriptionLabel' | translate }}</label>
         <textarea
           id="description"
           rows="4"
@@ -50,7 +50,7 @@
       </div>
 
       <div>
-        <label for="price" class="block text-sm font-medium text-text-primary">Preço por dia (R$)</label>
+        <label for="price" class="block text-sm font-medium text-text-primary">{{ 'create.priceLabel' | translate }}</label>
         <input
           id="price"
           type="number"
@@ -67,14 +67,14 @@
       </div>
 
       <div>
-        <label for="categoryId" class="block text-sm font-medium text-text-primary">Categoria</label>
+        <label for="categoryId" class="block text-sm font-medium text-text-primary">{{ 'create.categoryLabel' | translate }}</label>
         <select
           id="categoryId"
           formControlName="categoryId"
           class="mt-1 w-full rounded-md border border-border-default bg-bg-surface px-3 py-2 text-sm text-text-primary"
           data-testid="create-asset-category-select"
         >
-          <option value="">Selecione uma categoria</option>
+          <option value="">{{ 'create.categoryPlaceholderOption' | translate }}</option>
           @for (category of categories(); track category.id) {
             <option [value]="category.id">{{ category.name }}</option>
           }
@@ -92,7 +92,7 @@
         class="mt-2 rounded-md bg-brand-default px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover active:bg-brand-active disabled:opacity-60"
         data-testid="create-asset-submit-button"
       >
-        {{ submitting() ? 'Criando...' : 'Criar rascunho' }}
+        {{ (submitting() ? 'create.submitButtonLoading' : 'create.submitButton') | translate }}
       </button>
     </form>
   }
@@ -100,7 +100,7 @@
   @if (step() === 'media') {
     <div class="mt-6 flex flex-col gap-4" data-testid="create-asset-media-step">
       <p class="text-sm text-text-secondary">
-        Anúncio criado como rascunho. Adicione uma foto (opcional) e depois envie para moderação.
+        {{ 'create.mediaStepDescription' | translate }}
       </p>
 
       <input
@@ -112,13 +112,13 @@
       />
 
       @if (mediaUploading()) {
-        <p class="text-sm text-text-secondary" data-testid="create-asset-media-uploading">Enviando arquivo...</p>
+        <p class="text-sm text-text-secondary" data-testid="create-asset-media-uploading">{{ 'create.mediaUploading' | translate }}</p>
       }
       @if (mediaError()) {
         <p class="text-sm text-error" data-testid="create-asset-media-error">{{ mediaError() }}</p>
       }
       @if (mediaUploaded()) {
-        <p class="text-sm text-success" data-testid="create-asset-media-success">Foto enviada com sucesso.</p>
+        <p class="text-sm text-success" data-testid="create-asset-media-success">{{ 'create.mediaUploadSuccess' | translate }}</p>
       }
 
       @if (moderationError()) {
@@ -137,7 +137,7 @@
         data-testid="create-asset-submit-moderation-button"
         (click)="onSubmitForModeration()"
       >
-        {{ submittingModeration() ? 'Enviando...' : 'Enviar para moderação' }}
+        {{ (submittingModeration() ? 'create.submitModerationButtonLoading' : 'create.submitModerationButton') | translate }}
       </button>
     </div>
   }
@@ -145,14 +145,14 @@
   @if (step() === 'done') {
     <div class="mt-6 flex flex-col gap-3" data-testid="create-asset-done-step">
       <p class="text-sm text-text-secondary">
-        Anúncio enviado para moderação. Assim que aprovado, ficará visível no catálogo.
+        {{ 'create.doneDescription' | translate }}
       </p>
       <a
         [routerLink]="['/catalog', assetId()]"
         class="text-sm font-medium text-brand-default hover:underline"
         data-testid="create-asset-view-link"
       >
-        Ver meu anúncio
+        {{ 'create.viewAssetLink' | translate }}
       </a>
     </div>
   }

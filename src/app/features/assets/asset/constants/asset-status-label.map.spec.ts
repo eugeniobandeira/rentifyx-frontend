@@ -1,12 +1,12 @@
-import { getAssetStatusLabel } from './asset-status-label.map';
+import { getAssetStatusLabelKey } from './asset-status-label.map';
 import { AssetStatus } from '../types/asset-status';
 
-describe('getAssetStatusLabel', () => {
-  it('maps every AssetStatus value to a Portuguese label', () => {
-    expect(getAssetStatusLabel(AssetStatus.Draft)).toBe('Rascunho');
-    expect(getAssetStatusLabel(AssetStatus.PendingModeration)).toBe('Em moderação');
-    expect(getAssetStatusLabel(AssetStatus.Active)).toBe('Disponível');
-    expect(getAssetStatusLabel(AssetStatus.Suspended)).toBe('Suspenso');
-    expect(getAssetStatusLabel(AssetStatus.Archived)).toBe('Arquivado');
+describe('getAssetStatusLabelKey', () => {
+  it('maps every AssetStatus value to a translation key', () => {
+    expect(getAssetStatusLabelKey(AssetStatus.Draft)).toBe('detail.status.draft');
+    expect(getAssetStatusLabelKey(AssetStatus.PendingModeration)).toBe('detail.status.pendingModeration');
+    expect(getAssetStatusLabelKey(AssetStatus.Active)).toBe('detail.status.active');
+    expect(getAssetStatusLabelKey(AssetStatus.Suspended)).toBe('detail.status.suspended');
+    expect(getAssetStatusLabelKey(AssetStatus.Archived)).toBe('detail.status.archived');
   });
 });

@@ -1,0 +1,75 @@
+{
+  "browse": {
+    "title": "Catálogo",
+    "subtitle": "Encontre itens disponíveis para aluguel.",
+    "createAssetLink": "Anunciar item",
+    "categoryAllOption": "Todas as categorias",
+    "keywordPlaceholder": "Buscar por palavra-chave",
+    "minPricePlaceholder": "Preço mínimo",
+    "maxPricePlaceholder": "Preço máximo",
+    "searchSubmitButton": "Buscar",
+    "loading": "Carregando...",
+    "emptyState": "Nenhum item encontrado para os filtros selecionados.",
+    "perDay": "/ dia",
+    "loadMoreButton": "Carregar mais",
+    "loadMoreLoadingButton": "Carregando..."
+  },
+  "detail": {
+    "backLink": "← Voltar ao catálogo",
+    "loading": "Carregando...",
+    "perDay": "/ dia",
+    "status": {
+      "draft": "Rascunho",
+      "pendingModeration": "Em moderação",
+      "active": "Disponível",
+      "suspended": "Suspenso",
+      "archived": "Arquivado",
+      "unknown": "Desconhecido"
+    }
+  },
+  "create": {
+    "title": "Anunciar item",
+    "titleLabel": "Título",
+    "descriptionLabel": "Descrição",
+    "priceLabel": "Preço por dia (R$)",
+    "categoryLabel": "Categoria",
+    "categoryPlaceholderOption": "Selecione uma categoria",
+    "submitButton": "Criar rascunho",
+    "submitButtonLoading": "Criando...",
+    "mediaStepDescription": "Anúncio criado como rascunho. Adicione uma foto (opcional) e depois envie para moderação.",
+    "mediaUploading": "Enviando arquivo...",
+    "mediaUploadSuccess": "Foto enviada com sucesso.",
+    "unsupportedMediaFormat": "Formato não suportado. Use JPEG, PNG, WEBP ou MP4.",
+    "submitModerationButton": "Enviar para moderação",
+    "submitModerationButtonLoading": "Enviando...",
+    "doneDescription": "Anúncio enviado para moderação. Assim que aprovado, ficará visível no catálogo.",
+    "viewAssetLink": "Ver meu anúncio"
+  },
+  "adminReview": {
+    "title": "Revisar anúncios",
+    "subtitle": "Anúncios aguardando moderação.",
+    "loading": "Carregando...",
+    "queueEmpty": "Nenhum anúncio aguardando moderação.",
+    "perDay": "/ dia",
+    "loadMoreButton": "Carregar mais",
+    "loadMoreLoadingButton": "Carregando...",
+    "selecting": "Carregando anúncio...",
+    "reasonLabel": "Motivo (opcional)",
+    "approveButton": "Aprovar",
+    "rejectButton": "Rejeitar (arquiva o anúncio)",
+    "noSelection": "Selecione um anúncio na lista para revisar."
+  },
+  "adminCategories": {
+    "title": "Categorias",
+    "createHeading": "Nova categoria",
+    "newNamePlaceholder": "Nome da categoria",
+    "rootCategoryOption": "Categoria raiz (sem pai)",
+    "createButton": "Criar categoria",
+    "createButtonLoading": "Criando...",
+    "loading": "Carregando...",
+    "saveButton": "Salvar",
+    "saveButtonLoading": "Salvando...",
+    "cancelButton": "Cancelar",
+    "editButton": "Editar"
+  }
+}

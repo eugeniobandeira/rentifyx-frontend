@@ -1,11 +1,11 @@
 <div class="mx-auto max-w-4xl px-4 py-8 sm:py-12" data-testid="admin-review-page">
-  <h1 class="text-2xl font-semibold text-text-primary sm:text-3xl">Revisar anúncios</h1>
-  <p class="mt-2 text-sm text-text-secondary">Anúncios aguardando moderação.</p>
+  <h1 class="text-2xl font-semibold text-text-primary sm:text-3xl">{{ 'adminReview.title' | translate }}</h1>
+  <p class="mt-2 text-sm text-text-secondary">{{ 'adminReview.subtitle' | translate }}</p>
 
   <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
     <div>
       @if (loading()) {
-        <p class="text-sm text-text-secondary" data-testid="admin-review-queue-loading">Carregando...</p>
+        <p class="text-sm text-text-secondary" data-testid="admin-review-queue-loading">{{ 'adminReview.loading' | translate }}</p>
       } @else if (queueError()) {
         <p
           class="rounded-md border border-error-border bg-error-subtle px-4 py-3 text-sm text-error-subtle-foreground"
@@ -15,7 +15,7 @@
         </p>
       } @else if (queue().length === 0) {
         <p class="text-sm text-text-secondary" data-testid="admin-review-queue-empty">
-          Nenhum anúncio aguardando moderação.
+          {{ 'adminReview.queueEmpty' | translate }}
         </p>
       } @else {
         <ul class="flex flex-col gap-2" data-testid="admin-review-queue-list">
@@ -30,7 +30,7 @@
               >
                 <p class="truncate text-sm font-medium text-text-primary">{{ item.title }}</p>
                 <p class="mt-1 truncate text-xs text-text-secondary">
-                  {{ categoryName(item.categoryId) }} · R$ {{ item.price | number: '1.2-2' }} / dia
+                  {{ categoryName(item.categoryId) }} · R$ {{ item.price | number: '1.2-2' }} {{ 'adminReview.perDay' | translate }}
                 </p>
               </button>
             </li>
@@ -45,7 +45,7 @@
             data-testid="admin-review-load-more-button"
             (click)="onLoadMore()"
           >
-            {{ loadingMore() ? 'Carregando...' : 'Carregar mais' }}
+            {{ (loadingMore() ? 'adminReview.loadMoreLoadingButton' : 'adminReview.loadMoreButton') | translate }}
           </button>
         }
       }
@@ -53,7 +53,7 @@
 
     <div>
       @if (selecting()) {
-        <p class="text-sm text-text-secondary" data-testid="admin-review-selecting">Carregando anúncio...</p>
+        <p class="text-sm text-text-secondary" data-testid="admin-review-selecting">{{ 'adminReview.selecting' | translate }}</p>
       } @else if (selectError()) {
         <p
           class="rounded-md border border-error-border bg-error-subtle px-4 py-3 text-sm text-error-subtle-foreground"
@@ -72,7 +72,7 @@
           </p>
 
           <div class="mt-6 flex flex-col gap-3 border-t border-border-default pt-6">
-            <label for="reason" class="text-sm font-medium text-text-primary">Motivo (opcional)</label>
+            <label for="reason" class="text-sm font-medium text-text-primary">{{ 'adminReview.reasonLabel' | translate }}</label>
             <textarea
               id="reason"
               rows="2"
@@ -94,7 +94,7 @@
                 data-testid="admin-review-approve-button"
                 (click)="onReview(true)"
               >
-                Aprovar
+                {{ 'adminReview.approveButton' | translate }}
               </button>
               <button
                 type="button"
@@ -103,14 +103,14 @@
                 data-testid="admin-review-reject-button"
                 (click)="onReview(false)"
               >
-                Rejeitar (arquiva o anúncio)
+                {{ 'adminReview.rejectButton' | translate }}
               </button>
             </div>
           </div>
         </article>
       } @else {
         <p class="text-sm text-text-muted" data-testid="admin-review-no-selection">
-          Selecione um anúncio na lista para revisar.
+          {{ 'adminReview.noSelection' | translate }}
         </p>
       }
     </div>

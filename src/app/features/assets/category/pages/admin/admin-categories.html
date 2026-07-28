@@ -1,12 +1,12 @@
 <div class="mx-auto max-w-2xl px-4 py-8 sm:py-12" data-testid="admin-categories-page">
-  <h1 class="text-2xl font-semibold text-text-primary sm:text-3xl">Categorias</h1>
+  <h1 class="text-2xl font-semibold text-text-primary sm:text-3xl">{{ 'adminCategories.title' | translate }}</h1>
 
   <form
     class="mt-6 flex flex-col gap-3 rounded-lg border border-border-default bg-bg-surface p-4"
     data-testid="admin-categories-create-form"
     (ngSubmit)="onCreateSubmit()"
   >
-    <h2 class="text-sm font-semibold text-text-primary">Nova categoria</h2>
+    <h2 class="text-sm font-semibold text-text-primary">{{ 'adminCategories.createHeading' | translate }}</h2>
 
     @if (createError()) {
       <p class="text-sm text-error" data-testid="admin-categories-create-error">{{ createError() }}</p>
@@ -15,7 +15,7 @@
     <input
       type="text"
       name="newName"
-      placeholder="Nome da categoria"
+      [attr.placeholder]="'adminCategories.newNamePlaceholder' | translate"
       class="rounded-md border border-border-default bg-bg-canvas px-3 py-2 text-sm text-text-primary"
       data-testid="admin-categories-new-name-input"
       [(ngModel)]="newName"
@@ -27,7 +27,7 @@
       data-testid="admin-categories-new-parent-select"
       [(ngModel)]="newParentCategoryId"
     >
-      <option value="">Categoria raiz (sem pai)</option>
+      <option value="">{{ 'adminCategories.rootCategoryOption' | translate }}</option>
       @for (category of categories(); track category.id) {
         <option [value]="category.id">{{ category.name }}</option>
       }
@@ -39,12 +39,12 @@
       class="self-start rounded-md bg-brand-default px-4 py-2 text-sm font-medium text-brand-foreground hover:bg-brand-hover active:bg-brand-active disabled:opacity-60"
       data-testid="admin-categories-create-submit-button"
     >
-      {{ creating() ? 'Criando...' : 'Criar categoria' }}
+      {{ (creating() ? 'adminCategories.createButtonLoading' : 'adminCategories.createButton') | translate }}
     </button>
   </form>
 
   @if (loading()) {
-    <p class="mt-6 text-sm text-text-secondary" data-testid="admin-categories-loading">Carregando...</p>
+    <p class="mt-6 text-sm text-text-secondary" data-testid="admin-categories-loading">{{ 'adminCategories.loading' | translate }}</p>
   } @else if (error()) {
     <p
       class="mt-6 rounded-md border border-error-border bg-error-subtle px-4 py-3 text-sm text-error-subtle-foreground"
@@ -76,7 +76,7 @@
                 data-testid="admin-categories-edit-parent-select"
                 [(ngModel)]="editParentCategoryId"
               >
-                <option value="">Categoria raiz (sem pai)</option>
+                <option value="">{{ 'adminCategories.rootCategoryOption' | translate }}</option>
                 @for (option of categories(); track option.id) {
                   <option [value]="option.id">{{ option.name }}</option>
                 }
@@ -89,7 +89,7 @@
                   data-testid="admin-categories-save-edit-button"
                   (click)="saveEdit(category.id)"
                 >
-                  {{ savingEdit() ? 'Salvando...' : 'Salvar' }}
+                  {{ (savingEdit() ? 'adminCategories.saveButtonLoading' : 'adminCategories.saveButton') | translate }}
                 </button>
                 <button
                   type="button"
@@ -97,7 +97,7 @@
                   data-testid="admin-categories-cancel-edit-button"
                   (click)="cancelEdit()"
                 >
-                  Cancelar
+                  {{ 'adminCategories.cancelButton' | translate }}
                 </button>
               </div>
             </div>
@@ -110,7 +110,7 @@
                 data-testid="admin-categories-edit-button"
                 (click)="startEdit(category)"
               >
-                Editar
+                {{ 'adminCategories.editButton' | translate }}
               </button>
             </div>
           }
