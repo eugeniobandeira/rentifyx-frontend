@@ -1,6 +1,6 @@
 # RentifyX Frontend
 
-Angular 22 frontend for the RentifyX platform. Standalone components, SSR-enabled, Tailwind CSS v4. Currently integrates with `rentifyx-identity-api` only (auth, session, LGPD data export/consent) — `rentifyx-communications-api`, `rentifyx-asset-registry-api`, and `rentifyx-ai-services` are not yet consumed by this app.
+Angular 22 frontend for the RentifyX platform. Standalone components, SSR-enabled, Tailwind CSS v4, runtime i18n (pt-BR/en). Integrates with `rentifyx-identity-api` (auth, session, LGPD data export/consent) and `rentifyx-asset-registry-api` (browse/detail/create/admin asset flows) — `rentifyx-communications-api` and `rentifyx-ai-services` are not yet consumed by this app.
 
 For conventions, folder structure, and architecture decisions, see [`CLAUDE.md`](./CLAUDE.md). For product scope, roadmap, and decision history, see [`.specs/project/`](./.specs/project/).
 
@@ -12,6 +12,7 @@ For conventions, folder structure, and architecture decisions, see [`CLAUDE.md`]
 - **Tests** — Vitest (Angular's native unit-test builder), no Karma/Jasmine
 - **State** — Angular Signals, no NgRx/Redux
 - **TypeScript** `strict: true` + extra strictness flags (`noImplicitOverride`, `noPropertyAccessFromIndexSignature`, etc.)
+- **i18n** — `@ngx-translate/core` + `@ngx-translate/http-loader`, runtime-switchable (pt-BR default, en supported); translation files under `public/i18n/{common,auth,assets}/{pt-BR,en}.json`
 
 ## Running locally
 
@@ -51,5 +52,6 @@ No e2e framework configured (`ng e2e` is a no-op stub). No CI/CD pipeline yet �
 - `core/` — cross-cutting infra with no domain ownership: guards, interceptors, layout shell
 - `features/<domain>/<entity>/` — one folder per entity, each owning its own `components/`, `interfaces/`, `services/`
 - `shared/` — reusable UI kit, composables, generic services
+- `public/i18n/` — translation JSON, one namespace per domain (`common`, `auth`, `assets`); `core/services/language/language.service.ts` owns the active language
 
 `SessionService` is the single source of truth for auth state (access token in memory only, never persisted; refresh token lives in an httpOnly cookie set by the backend). See `CLAUDE.md` for the full session/auth flow, error-handling convention, and naming rules.
