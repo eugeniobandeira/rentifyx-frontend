@@ -85,6 +85,12 @@ Real infra, applied 2026-07-27: EC2 instance (`t2.micro`) running the SSR server
 - **`NG_ALLOWED_HOSTS` is required at container runtime, not optional.** Angular 19+'s SSR engine (`@angular/ssr`'s `AngularNodeAppEngine`) rejects any request whose `Host`/`X-Forwarded-Host` header isn't on an explicit allowlist (built-in SSRF protection) — without this env var, every request 400s. Currently set to `*` in `iac/terraform/modules/ec2/userdata.sh.tpl`'s `docker run` since there's no fixed domain/CloudFront yet, only the EC2 instance's own public IP (same temporary posture already used for CORS on the backend repos — narrow both once a real frontend origin exists).
 - Deploy sequence (manual, no CI/CD pipeline yet): `docker build` → `docker push` to the ECR repo `terraform apply` creates → `terraform apply` (or, for the EC2 instance specifically, replace/relaunch to pick up a new image — `userdata.sh.tpl` only runs on first boot, so an in-place image update on a *running* instance needs a manual `docker pull && docker rm -f && docker run` via SSM, not just a redeploy of Terraform).
 - Backend URLs (`environment.ts`'s `identityApiUrl`/`assetRegistryApiUrl`) point directly at those repos' own EC2 hosts — no reverse proxy/API gateway in front, same as local dev against a real backend.
+- The ECR repo has `force_delete = true` so `terraform destroy` never blocks on `RepositoryNotEmptyException` regardless of pushed images.
+
+### Windows / Git Bash gotchas (deploying from this OS)
+
+- **MSYS path conversion silently mangles any argument starting with `/`** — `aws ssm get-parameter --name "/rentifyx/..."` gets rewritten to a Windows path before AWS ever sees it, producing misleading errors (`ParameterNotFound` for a parameter that exists). Prefix the command with `MSYS_NO_PATHCONV=1` whenever an argument starts with `/`.
+- A stale `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`/`AWS_SESSION_TOKEN` in the shell session silently overrides `--profile`/`AWS_PROFILE`. Prefix real commands with `env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN AWS_PROFILE=rentifyx-admin AWS_SDK_LOAD_CONFIG=1`.
 
 ## Git
 
