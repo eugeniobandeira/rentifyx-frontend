@@ -1,6 +1,6 @@
 <section class="flex min-h-full items-center justify-center bg-bg-canvas px-4 py-8">
   <div class="w-full max-w-sm rounded-lg border border-border-default bg-bg-surface p-6 shadow-sm sm:p-8">
-    <h1 class="mb-6 text-xl font-semibold text-text-primary">Sign in</h1>
+    <h1 class="mb-6 text-xl font-semibold text-text-primary">{{ 'login.title' | translate }}</h1>
 
     @if (banner()) {
       <div
@@ -25,7 +25,9 @@
       data-testid="login-form"
     >
       <div class="flex flex-col gap-1">
-        <label for="email" class="text-sm font-medium text-text-primary">Email</label>
+        <label for="email" class="text-sm font-medium text-text-primary">{{
+          'login.emailLabel' | translate
+        }}</label>
         <input
           id="email"
           type="email"
@@ -38,12 +40,14 @@
 
       <div class="flex flex-col gap-1">
         <div class="flex items-center justify-between">
-          <label for="password" class="text-sm font-medium text-text-primary">Password</label>
+          <label for="password" class="text-sm font-medium text-text-primary">{{
+            'login.passwordLabel' | translate
+          }}</label>
           <a
             routerLink="/forgot-password"
             class="text-sm text-brand-default hover:underline"
             data-testid="login-forgot-password-link"
-            >Forgot password?</a
+            >{{ 'login.forgotPasswordLink' | translate }}</a
           >
         </div>
         <input
@@ -62,14 +66,14 @@
         class="mt-2 rounded-md bg-brand-default px-4 py-2 font-medium text-brand-foreground hover:bg-brand-hover active:bg-brand-active disabled:cursor-not-allowed disabled:opacity-60"
         data-testid="login-submit-button"
       >
-        Sign in
+        {{ 'login.submitButton' | translate }}
       </button>
     </form>
 
     <p class="mt-4 text-sm text-text-secondary">
-      Don't have an account?
+      {{ 'login.noAccountText' | translate }}
       <a routerLink="/register" class="text-brand-default hover:underline" data-testid="login-register-link"
-        >Register</a
+        >{{ 'login.registerLink' | translate }}</a
       >
     </p>
   </div>

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 import { useFormSubmission } from '@shared/composables/use-form-submission';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
@@ -9,7 +10,7 @@ import { createLoginFormControl, LoginFormGroup } from '../constants/login-form.
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.html',
 })

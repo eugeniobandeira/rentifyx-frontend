@@ -6,14 +6,13 @@
         role="status"
         data-testid="register-success-view"
       >
-        <h1 class="text-lg font-semibold mb-1">Check your email</h1>
+        <h1 class="text-lg font-semibold mb-1">{{ 'register.successTitle' | translate }}</h1>
         <p class="text-sm">
-          We sent a confirmation link to your email address. Click the link to verify your
-          account before signing in.
+          {{ 'register.successBody' | translate }}
         </p>
       </div>
     } @else {
-      <h1 class="text-xl font-semibold text-text-primary mb-6">Create your account</h1>
+      <h1 class="text-xl font-semibold text-text-primary mb-6">{{ 'register.title' | translate }}</h1>
 
       @if (banner()) {
         <div
@@ -54,7 +53,7 @@
       >
         <div>
           <label for="email" class="block text-sm font-medium text-text-primary mb-1"
-            >Email</label
+            >{{ 'register.emailLabel' | translate }}</label
           >
           <input
             id="email"
@@ -73,7 +72,7 @@
 
         <div>
           <label for="taxId" class="block text-sm font-medium text-text-primary mb-1"
-            >Tax ID</label
+            >{{ 'register.taxIdLabel' | translate }}</label
           >
           <input
             id="taxId"
@@ -92,7 +91,7 @@
 
         <div>
           <label for="password" class="block text-sm font-medium text-text-primary mb-1"
-            >Password</label
+            >{{ 'register.passwordLabel' | translate }}</label
           >
           <input
             id="password"
@@ -108,14 +107,14 @@
             </p>
           } @else {
             <p class="mt-1 text-sm text-text-muted">
-              12-128 characters, with uppercase, lowercase, a digit, and a symbol.
+              {{ 'register.passwordHint' | translate }}
             </p>
           }
         </div>
 
         <div>
           <label for="role" class="block text-sm font-medium text-text-primary mb-1"
-            >Role</label
+            >{{ 'register.roleLabel' | translate }}</label
           >
           <select
             id="role"
@@ -123,8 +122,8 @@
             class="w-full rounded-md border border-border-default bg-bg-surface text-text-primary px-3 py-2 text-sm focus:outline-none focus:border-border-focus"
             data-testid="register-role-select"
           >
-            <option value="Owner">Owner</option>
-            <option value="Renter">Renter</option>
+            <option value="Owner">{{ 'register.roleOwner' | translate }}</option>
+            <option value="Renter">{{ 'register.roleRenter' | translate }}</option>
           </select>
           @if (isInvalid('role')) {
             <p class="mt-1 text-sm text-error" data-testid="register-role-error">
@@ -142,12 +141,12 @@
             data-testid="register-consent-checkbox"
           />
           <label for="consentGiven" class="text-sm text-text-secondary">
-            I consent to the processing of my personal data.
+            {{ 'register.consentLabel' | translate }}
           </label>
         </div>
         @if (isInvalid('consentGiven')) {
           <p class="text-sm text-error" data-testid="register-consent-error">
-            You must agree before creating an account.
+            {{ 'register.consentError' | translate }}
           </p>
         }
 
@@ -157,7 +156,7 @@
           class="w-full rounded-md bg-brand-default hover:bg-brand-hover active:bg-brand-active text-brand-foreground text-sm font-medium py-2.5 disabled:opacity-60"
           data-testid="register-submit-button"
         >
-          {{ submitting() ? 'Creating account…' : 'Create account' }}
+          {{ (submitting() ? 'register.submittingButton' : 'register.submitButton') | translate }}
         </button>
       </form>
     }

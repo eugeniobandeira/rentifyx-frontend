@@ -4,6 +4,7 @@ import { of, throwError } from 'rxjs';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { LoginPage } from './login';
 
 const user: iUserResponse = {
@@ -47,6 +48,7 @@ describe('LoginPage', () => {
     TestBed.configureTestingModule({
       imports: [LoginPage],
       providers: [
+        provideTestTranslate(),
         { provide: SessionService, useValue: sessionService },
         { provide: Router, useValue: router },
         {

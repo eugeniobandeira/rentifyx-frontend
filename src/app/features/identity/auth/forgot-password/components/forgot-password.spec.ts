@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { ForgotPasswordService } from '../services/forgot-password.service';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { ForgotPasswordPage } from './forgot-password';
 
 const validFormValue = {
@@ -29,7 +30,10 @@ describe('ForgotPasswordPage', () => {
   function configure(): ForgotPasswordPage {
     TestBed.configureTestingModule({
       imports: [ForgotPasswordPage],
-      providers: [{ provide: ForgotPasswordService, useValue: forgotPasswordService }],
+      providers: [
+        provideTestTranslate(),
+        { provide: ForgotPasswordService, useValue: forgotPasswordService },
+      ],
     });
 
     const fixture = TestBed.createComponent(ForgotPasswordPage);

@@ -3,7 +3,7 @@
     @switch (status()) {
       @case ('loading') {
         <p class="text-center text-text-secondary" data-testid="verify-email-loading-view">
-          Verifying your email…
+          {{ 'verifyEmail.loadingText' | translate }}
         </p>
       }
       @case ('success') {
@@ -11,15 +11,15 @@
           class="rounded-md border border-success-border bg-success-subtle p-4 text-success-subtle-foreground"
           data-testid="verify-email-success-view"
         >
-          <h1 class="text-lg font-semibold">Email verified</h1>
-          <p class="mt-2 text-sm">Your account has been successfully verified.</p>
+          <h1 class="text-lg font-semibold">{{ 'verifyEmail.successTitle' | translate }}</h1>
+          <p class="mt-2 text-sm">{{ 'verifyEmail.successBody' | translate }}</p>
         </div>
         <a
           routerLink="/login"
           class="mt-6 inline-block w-full rounded-md bg-brand-default px-4 py-2 text-center text-sm font-medium text-brand-foreground hover:bg-brand-hover"
           data-testid="verify-email-login-link"
         >
-          Go to login
+          {{ 'verifyEmail.goToLoginLink' | translate }}
         </a>
       }
       @case ('error') {
@@ -27,10 +27,9 @@
           class="rounded-md border border-error-border bg-error-subtle p-4 text-error-subtle-foreground"
           data-testid="verify-email-error-view"
         >
-          <h1 class="text-lg font-semibold">This link is no longer valid</h1>
+          <h1 class="text-lg font-semibold">{{ 'verifyEmail.errorTitle' | translate }}</h1>
           <p class="mt-2 text-sm">
-            This verification link has expired or is no longer valid. Please request a new
-            one or return to login.
+            {{ 'verifyEmail.errorBody' | translate }}
           </p>
         </div>
         <a
@@ -38,7 +37,7 @@
           class="mt-6 inline-block text-sm font-medium text-brand-default"
           data-testid="verify-email-login-link"
         >
-          Back to login
+          {{ 'verifyEmail.backToLoginLink' | translate }}
         </a>
       }
     }

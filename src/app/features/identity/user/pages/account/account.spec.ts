@@ -8,7 +8,41 @@ import { ConsentService } from '@features/identity/user/services/consent/consent
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
 import { iDataExportResponse } from '@features/identity/user/interfaces/data-export-response';
 import { iConsentResponse } from '@features/identity/user/interfaces/consent-response';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { AccountPage } from './account';
+
+const translations = {
+  account: {
+    loadingText: 'Loading your profile…',
+    title: 'Your profile',
+    emailLabel: 'Email',
+    roleLabel: 'Role',
+    statusLabel: 'Status',
+    memberSinceLabel: 'Member since',
+    consentHeading: 'Consent',
+    essentialLabel: 'Essential',
+    marketingLabel: 'Marketing',
+    consentGranted: 'Granted',
+    consentNotGranted: 'Not granted',
+    revokeButton: 'Revoke',
+    grantButton: 'Grant',
+    dataHeading: 'Your data',
+    exportButton: 'Export my data',
+    exportingButton: 'Preparing export…',
+    deleteHeading: 'Delete account',
+    deleteDescriptionPrefix: 'This permanently anonymizes your account and cannot be undone. Type',
+    deleteDescriptionSuffix: 'to confirm.',
+    deleteButton: 'Delete my account',
+    deletingButton: 'Deleting…',
+    errorTitle: "Couldn't load your profile",
+    loadErrorBanner: "Couldn't load your profile, please try again later.",
+    exportErrorBanner: "Couldn't export your data, try again later.",
+    deleteErrorBanner: "Couldn't delete your account, try again later.",
+    consentErrorBanner: "Couldn't update your consent, try again later.",
+    revokeConsentConfirm:
+      'Revoking essential consent may affect core account functionality. Continue?',
+  },
+};
 
 const user: iUserResponse = {
   id: 'user-1',
@@ -74,6 +108,7 @@ describe('AccountPage', () => {
     TestBed.configureTestingModule({
       imports: [AccountPage],
       providers: [
+        provideTestTranslate(translations),
         { provide: UserService, useValue: userService },
         { provide: ConsentService, useValue: consentService },
         { provide: SessionService, useValue: sessionService },

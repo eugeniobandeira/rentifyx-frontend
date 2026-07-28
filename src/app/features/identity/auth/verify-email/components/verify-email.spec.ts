@@ -3,7 +3,21 @@ import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { VerifyEmailService } from '../services/verify-email.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { VerifyEmailPage } from './verify-email';
+
+const translations = {
+  verifyEmail: {
+    loadingText: 'Verifying your email…',
+    successTitle: 'Email verified',
+    successBody: 'Your account has been successfully verified.',
+    goToLoginLink: 'Go to login',
+    errorTitle: 'This link is no longer valid',
+    errorBody:
+      'This verification link has expired or is no longer valid. Please request a new one or return to login.',
+    backToLoginLink: 'Back to login',
+  },
+};
 
 const user: iUserResponse = {
   id: 'user-1',
@@ -30,6 +44,7 @@ describe('VerifyEmailPage', () => {
     TestBed.configureTestingModule({
       imports: [VerifyEmailPage],
       providers: [
+        provideTestTranslate(translations),
         { provide: VerifyEmailService, useValue: verifyEmailService },
         {
           provide: ActivatedRoute,

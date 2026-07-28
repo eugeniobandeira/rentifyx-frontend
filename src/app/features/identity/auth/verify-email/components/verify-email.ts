@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { VerifyEmailService } from '../services/verify-email.service';
 
 type VerifyEmailStatus = 'loading' | 'success' | 'error';
@@ -7,7 +8,7 @@ type VerifyEmailStatus = 'loading' | 'success' | 'error';
 @Component({
   selector: 'app-verify-email',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './verify-email.html',
 })

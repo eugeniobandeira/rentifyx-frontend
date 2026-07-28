@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ForgotPasswordService } from '../services/forgot-password.service';
 import { iForgotPasswordRequest } from '../interfaces/forgot-password-request';
 import { FORM_FIELD_NAMES } from '../constants/forgot-password.constants';
@@ -13,7 +14,7 @@ import { useFormSubmission } from '@shared/composables/use-form-submission';
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './forgot-password.html',
 })

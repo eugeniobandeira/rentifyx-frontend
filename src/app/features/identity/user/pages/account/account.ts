@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { UserService } from '@features/identity/user/services/user.service';
 import { ConsentService } from '@features/identity/user/services/consent/consent.service';
@@ -12,7 +13,7 @@ import { useFormSubmission } from '@shared/composables/use-form-submission';
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './account.html',
 })
@@ -22,6 +23,7 @@ export class AccountPage {
   private readonly _sessionService = inject(SessionService);
   private readonly _router = inject(Router);
   private readonly _document = inject(DOCUMENT);
+  private readonly _translate = inject(TranslateService);
 
   private readonly _formSubmission = useFormSubmission();
   protected readonly submitting = this._formSubmission.submitting;
@@ -48,7 +50,7 @@ export class AccountPage {
       },
       error: () => {
         this._formSubmission.setSubmitting(false);
-        this._formSubmission.setBanner("Couldn't load your profile, please try again later.");
+        this._formSubmission.setBanner(this._translate.instant('account.loadErrorBanner'));
       },
     });
   }
@@ -73,7 +75,7 @@ export class AccountPage {
       },
       error: () => {
         this.exporting.set(false);
-        this.exportBanner.set("Couldn't export your data, try again later.");
+        this.exportBanner.set(this._translate.instant('account.exportErrorBanner'));
       },
     });
   }
@@ -93,7 +95,7 @@ export class AccountPage {
       },
       error: () => {
         this.deleting.set(false);
-        this.deleteBanner.set("Couldn't delete your account, try again later.");
+        this.deleteBanner.set(this._translate.instant('account.deleteErrorBanner'));
       },
     });
   }
@@ -105,7 +107,7 @@ export class AccountPage {
     }
 
     const nextGranted = !user.essentialConsentGranted;
-    if (!nextGranted && !confirm('Revoking essential consent may affect core account functionality. Continue?')) {
+    if (!nextGranted && !confirm(this._translate.instant('account.revokeConsentConfirm'))) {
       return;
     }
 
@@ -137,7 +139,7 @@ export class AccountPage {
       },
       error: () => {
         this.consentSubmitting.set(false);
-        this.consentBanner.set("Couldn't update your consent, try again later.");
+        this.consentBanner.set(this._translate.instant('account.consentErrorBanner'));
       },
     });
   }

@@ -3,6 +3,7 @@ import { of, throwError } from 'rxjs';
 import { RegisterService } from '../services/register.service';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { RegisterPage } from './register';
 
 const user: iUserResponse = {
@@ -46,7 +47,7 @@ describe('RegisterPage', () => {
 
     TestBed.configureTestingModule({
       imports: [RegisterPage],
-      providers: [{ provide: RegisterService, useValue: registerService }],
+      providers: [provideTestTranslate(), { provide: RegisterService, useValue: registerService }],
     });
 
     const fixture = TestBed.createComponent(RegisterPage);

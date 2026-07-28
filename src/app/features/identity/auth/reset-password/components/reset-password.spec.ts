@@ -3,7 +3,27 @@ import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { ResetPasswordService } from '../services/reset-password.service';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { ResetPasswordPage } from './reset-password';
+
+const translations = {
+  resetPassword: {
+    invalidLinkTitle: 'This link is no longer valid',
+    invalidLinkBody:
+      'This password reset link has expired or is no longer valid. Please request a new one or return to login.',
+    backToLoginLink: 'Back to login',
+    successTitle: 'Password reset',
+    successBody:
+      'Your password has been successfully reset. You can now sign in with your new password.',
+    goToLoginLink: 'Go to login',
+    title: 'Reset your password',
+    newPasswordLabel: 'New password',
+    passwordHint: '12-128 characters, with uppercase, lowercase, a digit, and a symbol.',
+    submitButton: 'Reset password',
+    submittingButton: 'Resetting…',
+    genericError: 'Something went wrong, try again',
+  },
+};
 
 const VALID_PASSWORD = 'Sup3r$ecret!123';
 
@@ -31,6 +51,7 @@ describe('ResetPasswordPage', () => {
     TestBed.configureTestingModule({
       imports: [ResetPasswordPage],
       providers: [
+        provideTestTranslate(translations),
         { provide: ResetPasswordService, useValue: resetPasswordService },
         {
           provide: ActivatedRoute,

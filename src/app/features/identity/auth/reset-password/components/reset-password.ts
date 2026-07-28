@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ResetPasswordService } from '../services/reset-password.service';
 import { iResetPasswordRequest } from '../interfaces/reset-password-request';
 import {
@@ -17,13 +18,14 @@ const FORM_FIELD_NAMES = ['newPassword'] as const;
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './reset-password.html',
 })
 export class ResetPasswordPage {
   private readonly _resetPasswordService = inject(ResetPasswordService);
   private readonly _route = inject(ActivatedRoute);
+  private readonly _translate = inject(TranslateService);
 
   private _email = '';
   private _token = '';
@@ -93,7 +95,7 @@ export class ResetPasswordPage {
 
     const unmatched = this._formSubmission.handleError(error, this.form, FORM_FIELD_NAMES);
     if (error.kind === 'validation' && unmatched.length > 0) {
-      this._formSubmission.setBanner('Something went wrong, try again');
+      this._formSubmission.setBanner(this._translate.instant('resetPassword.genericError'));
     }
   }
 }

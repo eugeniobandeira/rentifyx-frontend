@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { RegisterService } from '../services/register.service';
 import { iRegisterRequest } from '../interfaces/register-request';
 import { FORM_FIELD_NAMES } from '../constants/register.constants';
@@ -10,7 +11,7 @@ import { useFormSubmission } from '@shared/composables/use-form-submission';
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './register.html',
 })
