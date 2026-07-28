@@ -1,8 +1,25 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TranslateLoader, provideTranslateLoader, provideTranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 import { httpErrorInterceptor } from './http-error.interceptor';
+
+class FakeTranslateLoader implements TranslateLoader {
+  getTranslation() {
+    return of({
+      common: {
+        httpError: {
+          network: "Couldn't reach the server, check your connection",
+          server: 'Something went wrong, try again',
+          forbidden: "You don't have permission to do that",
+          rateLimit: 'Too many attempts — try again shortly',
+        },
+      },
+    });
+  }
+}
 
 describe('httpErrorInterceptor', () => {
   let http: HttpClient;
@@ -13,6 +30,11 @@ describe('httpErrorInterceptor', () => {
       providers: [
         provideHttpClient(withInterceptors([httpErrorInterceptor])),
         provideHttpClientTesting(),
+        provideTranslateService({
+          loader: provideTranslateLoader(() => new FakeTranslateLoader()),
+          lang: 'en',
+          fallbackLang: 'en',
+        }),
       ],
     });
 
@@ -22,6 +44,18 @@ describe('httpErrorInterceptor', () => {
 
   afterEach(() => {
     httpMock.verify();
+  });
+
+  it('passes /i18n/ requests through unclassified (avoids a circular dependency on TranslateService)', () => {
+    let rawError: unknown;
+    http.get('/i18n/common/pt-BR.json').subscribe({
+      next: () => expect.unreachable('expected an error'),
+      error: (error: unknown) => (rawError = error),
+    });
+
+    httpMock.expectOne('/i18n/common/pt-BR.json').flush({}, { status: 500, statusText: 'Internal Server Error' });
+
+    expect(rawError).toBeInstanceOf(HttpErrorResponse);
   });
 
   function captureError(): { error?: iClassifiedHttpError } {

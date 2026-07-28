@@ -1,0 +1,49 @@
+{
+  "common": {
+    "appName": "RentityX",
+    "validation": {
+      "required": "This field is required.",
+      "email": "Enter a valid email address.",
+      "maxlength": "Must be at most {{length}} characters.",
+      "minlength": "Must be at least {{length}} characters.",
+      "pattern": "Must contain uppercase, lowercase, a digit, and a symbol.",
+      "generic": "This field is invalid."
+    },
+    "httpError": {
+      "network": "Couldn't reach the server, check your connection",
+      "server": "Something went wrong, try again",
+      "forbidden": "You don't have permission to do that",
+      "rateLimit": "Too many attempts — try again shortly"
+    }
+  },
+  "header": {
+    "adminCategoriesLink": "Categories",
+    "adminReviewLink": "Review listings",
+    "accountLink": "My account",
+    "logoutButton": "Log out",
+    "loginLink": "Log in",
+    "registerLink": "Create account",
+    "languageLabel": "Language"
+  },
+  "footer": {
+    "tagline": "Rent whatever you need, from people nearby.",
+    "supportLink": "Support",
+    "legalHeading": "Legal",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "refund": "Refund",
+    "resourcesHeading": "Resources",
+    "help": "Help center",
+    "howToCancel": "How to cancel",
+    "copyright": "© RentityX {{year}}. All rights reserved."
+  },
+  "home": {
+    "title": "Rent whatever you need, from people nearby.",
+    "subtitle": "Tools, electronics, vehicles, real estate and more — find or list items for rent safely and in compliance with LGPD.",
+    "catalogLink": "View catalog →",
+    "welcomeBack": "Welcome back,",
+    "goToAccount": "Go to my account",
+    "createAccount": "Create account",
+    "login": "Log in"
+  }
+}

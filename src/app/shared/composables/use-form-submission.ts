@@ -1,8 +1,9 @@
 import { AbstractControl, FormGroup } from '@angular/forms';
-import { signal } from '@angular/core';
+import { inject, signal } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 
-function fieldErrorMessage(control: AbstractControl | null): string {
+function fieldErrorMessage(translate: TranslateService, control: AbstractControl | null): string {
   const errors = control?.errors;
   if (!errors) {
     return '';
@@ -11,21 +12,25 @@ function fieldErrorMessage(control: AbstractControl | null): string {
     return errors['server'];
   }
   if (errors['required']) {
-    return 'This field is required.';
+    return translate.instant('common.validation.required');
   }
   if (errors['email']) {
-    return 'Enter a valid email address.';
+    return translate.instant('common.validation.email');
   }
   if (errors['maxlength']) {
-    return `Must be at most ${errors['maxlength'].requiredLength} characters.`;
+    return translate.instant('common.validation.maxlength', {
+      length: errors['maxlength'].requiredLength,
+    });
   }
   if (errors['minlength']) {
-    return `Must be at least ${errors['minlength'].requiredLength} characters.`;
+    return translate.instant('common.validation.minlength', {
+      length: errors['minlength'].requiredLength,
+    });
   }
   if (errors['pattern']) {
-    return 'Must contain uppercase, lowercase, a digit, and a symbol.';
+    return translate.instant('common.validation.pattern');
   }
-  return 'This field is invalid.';
+  return translate.instant('common.validation.generic');
 }
 
 function isInvalid(control: AbstractControl | null): boolean {
@@ -40,6 +45,7 @@ function isInvalid(control: AbstractControl | null): boolean {
  * then falls through to `handleError` for everything else.
  */
 export function useFormSubmission() {
+  const _translate = inject(TranslateService);
   const _submitting = signal(false);
   const _banner = signal<string | null>(null);
   const _isRateLimit = signal(false);
@@ -102,7 +108,7 @@ export function useFormSubmission() {
     setSubmitting,
     setBanner,
     isInvalid,
-    fieldErrorMessage,
+    fieldErrorMessage: (control: AbstractControl | null) => fieldErrorMessage(_translate, control),
     applyValidationErrors,
     handleError,
   };

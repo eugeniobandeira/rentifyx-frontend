@@ -15,14 +15,14 @@
           class="text-sm font-medium text-text-secondary hover:text-text-primary"
           data-testid="header-admin-categories-link"
         >
-          Categorias
+          {{ 'header.adminCategoriesLink' | translate }}
         </a>
         <a
           routerLink="/admin/review"
           class="text-sm font-medium text-text-secondary hover:text-text-primary"
           data-testid="header-admin-review-link"
         >
-          Revisar anúncios
+          {{ 'header.adminReviewLink' | translate }}
         </a>
       }
       <a
@@ -30,7 +30,7 @@
         class="text-sm font-medium text-text-secondary hover:text-text-primary"
         data-testid="header-account-link"
       >
-        Minha conta
+        {{ 'header.accountLink' | translate }}
       </a>
       <button
         type="button"
@@ -38,7 +38,7 @@
         class="rounded-md border border-border-strong px-4 py-2 text-sm font-semibold text-text-primary hover:bg-bg-canvas"
         data-testid="header-logout-button"
       >
-        Sair
+        {{ 'header.logoutButton' | translate }}
       </button>
     } @else {
       <a
@@ -46,15 +46,28 @@
         class="text-sm font-medium text-text-secondary hover:text-text-primary"
         data-testid="header-login-link"
       >
-        Entrar
+        {{ 'header.loginLink' | translate }}
       </a>
       <a
         routerLink="/register"
         class="rounded-md bg-brand-default px-4 py-2 text-sm font-semibold text-brand-foreground hover:bg-brand-hover"
         data-testid="header-register-link"
       >
-        Criar conta
+        {{ 'header.registerLink' | translate }}
       </a>
     }
+
+    <label class="sr-only" for="header-language-select">{{ 'header.languageLabel' | translate }}</label>
+    <select
+      id="header-language-select"
+      class="rounded-md border border-border-default bg-bg-surface px-2 py-1.5 text-sm text-text-primary"
+      data-testid="header-language-select"
+      [value]="currentLanguage()"
+      (change)="onLanguageChange($event)"
+    >
+      @for (language of supportedLanguages; track language) {
+        <option [value]="language">{{ language }}</option>
+      }
+    </select>
   </div>
 </header>

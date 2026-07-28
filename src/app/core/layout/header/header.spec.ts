@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { Header } from './header';
 
 const adminUser: iUserResponse = {
@@ -39,7 +40,11 @@ describe('Header', () => {
   function configure(): ComponentFixture<Header> {
     TestBed.configureTestingModule({
       imports: [Header],
-      providers: [provideRouter([]), { provide: SessionService, useValue: sessionService }],
+      providers: [
+        provideRouter([]),
+        provideTestTranslate(),
+        { provide: SessionService, useValue: sessionService },
+      ],
     });
     const fixture = TestBed.createComponent(Header);
     fixture.detectChanges();

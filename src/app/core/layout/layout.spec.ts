@@ -3,6 +3,7 @@ import { Component, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { ThemeService } from '@core/services/theme.service';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { Layout } from './layout';
 
 @Component({
@@ -22,6 +23,7 @@ describe('Layout', () => {
       imports: [HostComponent],
       providers: [
         provideRouter([]),
+        provideTestTranslate(),
         {
           provide: SessionService,
           useValue: { isAuthenticated: signal(false), isRestoringSession: signal(false) },

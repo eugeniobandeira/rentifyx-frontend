@@ -3,6 +3,7 @@ import { signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { SessionService } from '@features/identity/auth/session/services/session.service';
 import { iUserResponse } from '@features/identity/user/interfaces/user-response';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { HomePage } from './home';
 
 const user: iUserResponse = {
@@ -32,7 +33,11 @@ describe('HomePage', () => {
   function configure(): ComponentFixture<HomePage> {
     TestBed.configureTestingModule({
       imports: [HomePage],
-      providers: [provideRouter([]), { provide: SessionService, useValue: sessionService }],
+      providers: [
+        provideRouter([]),
+        provideTestTranslate(),
+        { provide: SessionService, useValue: sessionService },
+      ],
     });
     const fixture = TestBed.createComponent(HomePage);
     fixture.detectChanges();

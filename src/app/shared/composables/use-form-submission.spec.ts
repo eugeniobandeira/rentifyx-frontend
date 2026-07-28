@@ -1,6 +1,9 @@
 import { FormControl, FormGroup } from '@angular/forms';
+import { TestBed } from '@angular/core/testing';
+import { TranslateLoader, provideTranslateLoader, provideTranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
-import { useFormSubmission } from './use-form-submission';
+import { useFormSubmission as testedUseFormSubmission } from './use-form-submission';
 
 function buildError(overrides: Partial<iClassifiedHttpError>): iClassifiedHttpError {
   return {
@@ -11,6 +14,36 @@ function buildError(overrides: Partial<iClassifiedHttpError>): iClassifiedHttpEr
     validationErrors: null,
     ...overrides,
   };
+}
+
+class FakeTranslateLoader implements TranslateLoader {
+  getTranslation() {
+    return of({
+      common: {
+        validation: {
+          required: 'This field is required.',
+          email: 'Enter a valid email address.',
+          maxlength: 'Must be at most {{length}} characters.',
+          minlength: 'Must be at least {{length}} characters.',
+          pattern: 'Must contain uppercase, lowercase, a digit, and a symbol.',
+          generic: 'This field is invalid.',
+        },
+      },
+    });
+  }
+}
+
+function useFormSubmission() {
+  TestBed.configureTestingModule({
+    providers: [
+      provideTranslateService({
+        loader: provideTranslateLoader(() => new FakeTranslateLoader()),
+        lang: 'en',
+        fallbackLang: 'en',
+      }),
+    ],
+  });
+  return TestBed.runInInjectionContext(() => testedUseFormSubmission());
 }
 
 describe('useFormSubmission', () => {

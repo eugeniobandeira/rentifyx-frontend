@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { App } from './app';
 
 function mockMatchMedia(): void {
@@ -24,7 +25,12 @@ describe('App', () => {
     mockMatchMedia();
     await TestBed.configureTestingModule({
       imports: [App, RouterTestingModule],
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideTestTranslate(),
+      ],
     }).compileComponents();
   });
 

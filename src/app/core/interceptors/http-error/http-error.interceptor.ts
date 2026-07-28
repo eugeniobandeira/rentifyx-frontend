@@ -1,14 +1,11 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import { catchError, throwError } from 'rxjs';
 import { HttpErrorKind } from '@shared/types/http-error-kind';
 import { iClassifiedHttpError } from '@shared/interfaces/classified-http-error';
 import { iApiErrorResponse } from '@shared/interfaces/api-error-response';
 import { iValidationErrorResponse } from '@shared/interfaces/validation-error-response';
-
-const RATE_LIMIT_MESSAGE = 'Too many attempts — try again shortly';
-const NETWORK_ERROR_MESSAGE = "Couldn't reach the server, check your connection";
-const SERVER_ERROR_MESSAGE = 'Something went wrong, try again';
-const FORBIDDEN_MESSAGE = "You don't have permission to do that";
 
 const STATUS_KIND_MAP: Record<number, HttpErrorKind> = {
   400: 'bad-request',
@@ -20,22 +17,29 @@ const STATUS_KIND_MAP: Record<number, HttpErrorKind> = {
   429: 'rate-limit',
 };
 
-export const httpErrorInterceptor: HttpInterceptorFn = (req, next) =>
-  next(req).pipe(
+export const httpErrorInterceptor: HttpInterceptorFn = (req, next) => {
+  if (req.url.includes('/i18n/')) {
+    return next(req);
+  }
+
+  const translate = inject(TranslateService);
+
+  return next(req).pipe(
     catchError((error: unknown) => {
       if (!(error instanceof HttpErrorResponse)) {
         return throwError(() => error);
       }
-      return throwError(() => _classify(error));
+      return throwError(() => _classify(error, translate));
     }),
   );
+};
 
-function _classify(error: HttpErrorResponse): iClassifiedHttpError {
+function _classify(error: HttpErrorResponse, translate: TranslateService): iClassifiedHttpError {
   if (error.status === 0) {
     return {
       kind: 'network',
       status: 0,
-      message: NETWORK_ERROR_MESSAGE,
+      message: translate.instant('common.httpError.network'),
       correlationId: null,
       validationErrors: null,
     };
@@ -48,15 +52,18 @@ function _classify(error: HttpErrorResponse): iClassifiedHttpError {
     return {
       kind,
       status: error.status,
-      message: body?.title ?? SERVER_ERROR_MESSAGE,
+      message: body?.title ?? translate.instant('common.httpError.server'),
       correlationId: body?.extensions?.correlationId ?? null,
       validationErrors: body?.errors ?? null,
     };
   }
 
   const body = error.error as iApiErrorResponse | null;
-  const fallbackMessage = kind === 'forbidden' ? FORBIDDEN_MESSAGE : SERVER_ERROR_MESSAGE;
-  const message = kind === 'rate-limit' ? RATE_LIMIT_MESSAGE : (body?.title ?? fallbackMessage);
+  const fallbackMessage = translate.instant(
+    kind === 'forbidden' ? 'common.httpError.forbidden' : 'common.httpError.server',
+  );
+  const message =
+    kind === 'rate-limit' ? translate.instant('common.httpError.rateLimit') : (body?.title ?? fallbackMessage);
 
   return {
     kind,

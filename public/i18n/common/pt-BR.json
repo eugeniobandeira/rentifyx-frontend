@@ -1,0 +1,49 @@
+{
+  "common": {
+    "appName": "RentityX",
+    "validation": {
+      "required": "Este campo é obrigatório.",
+      "email": "Informe um e-mail válido.",
+      "maxlength": "Deve ter no máximo {{length}} caracteres.",
+      "minlength": "Deve ter no mínimo {{length}} caracteres.",
+      "pattern": "Deve conter maiúscula, minúscula, número e símbolo.",
+      "generic": "Este campo é inválido."
+    },
+    "httpError": {
+      "network": "Não foi possível acessar o servidor, verifique sua conexão",
+      "server": "Algo deu errado, tente novamente",
+      "forbidden": "Você não tem permissão para fazer isso",
+      "rateLimit": "Muitas tentativas — tente novamente em instantes"
+    }
+  },
+  "header": {
+    "adminCategoriesLink": "Categorias",
+    "adminReviewLink": "Revisar anúncios",
+    "accountLink": "Minha conta",
+    "logoutButton": "Sair",
+    "loginLink": "Entrar",
+    "registerLink": "Criar conta",
+    "languageLabel": "Idioma"
+  },
+  "footer": {
+    "tagline": "Alugue o que precisar, com quem está por perto.",
+    "supportLink": "Suporte",
+    "legalHeading": "Legal",
+    "terms": "Termos",
+    "privacy": "Privacidade",
+    "refund": "Reembolso",
+    "resourcesHeading": "Recursos",
+    "help": "Central de ajuda",
+    "howToCancel": "Como cancelar",
+    "copyright": "© RentityX {{year}}. Todos os direitos reservados."
+  },
+  "home": {
+    "title": "Alugue o que precisar, com quem está por perto.",
+    "subtitle": "Ferramentas, eletrônicos, veículos, imóveis e muito mais — encontre ou anuncie itens para aluguel com segurança e conformidade com a LGPD.",
+    "catalogLink": "Ver catálogo →",
+    "welcomeBack": "Bem-vindo(a) de volta,",
+    "goToAccount": "Ir para minha conta",
+    "createAccount": "Criar conta",
+    "login": "Entrar"
+  }
+}

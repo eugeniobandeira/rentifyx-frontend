@@ -1,10 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideTestTranslate } from '@shared/testing/translate-testing.providers';
 import { Footer } from './footer';
 
 describe('Footer', () => {
   function configure(): ComponentFixture<Footer> {
-    TestBed.configureTestingModule({ imports: [Footer], providers: [provideRouter([])] });
+    TestBed.configureTestingModule({
+      imports: [Footer],
+      providers: [
+        provideRouter([]),
+        provideTestTranslate({ footer: { copyright: '© RentityX {{year}}.' } }),
+      ],
+    });
     const fixture = TestBed.createComponent(Footer);
     fixture.detectChanges();
     return fixture;
