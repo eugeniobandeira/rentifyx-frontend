@@ -1,5 +1,13 @@
 # State
 
+## Quick Status (read this first — everything below is historical detail/changelog)
+
+- **Infra**: nothing deployed right now — full teardown confirmed 2026-07-28. `iac/terraform`/`Dockerfile` are committed and correct; needs a real `terraform apply` + fresh image build/push next time this needs to be live.
+- **Code**: forgot-password link fix committed (`b7aa6b7`), not yet deployed to any live instance (none exists right now).
+- **Blocked on `rentifyx-asset-registry-api`**: category seed data still missing (`GET /categories` → `[]`), separate from the now-fixed JWT bug.
+- **Don't trust prose claims of "live"/"destroyed" in this file at face value** — verify against the real AWS account before assuming either way.
+- Full history below.
+
 ## Decisions
 - **P2 asset browsing implemented (2026-07-27)**: first real consumer of `rentifyx-asset-registry-api`'s HTTP contract, per `.specs/features/api-integration-plan/spec.md`'s priority order. New `features/assets/{category,asset}/` entities (interfaces + services, mirroring `features/identity/` conventions), a public `/catalog` route (`BrowseAssetsPage`) listing categories + a filterable/paginated asset grid, and a link from `HomePage`. `AssetStatus` is modeled as a **numeric** enum (`Draft=0..Archived=4`), unlike identity-api's string-union `UserStatus`/`UserRole` — confirmed via that backend's source that it has no `JsonStringEnumConverter` configured, so it serializes the enum as its raw ordinal over HTTP. First real consumer of the dormant `getCategorySlot`/category-color-token system built in the 2026-07-09 color-system feature (STATE.md previously noted "nothing consumes them yet") — since `CategoryResponse` has no `slug` field, the category's `name` is used as the slug input directly (adaptation, not a spec mismatch). Category badge colors are applied via `[style]` binding to the CSS custom properties directly (`var(--color-category-N-subtle)`), not Tailwind utility classes — a dynamically-computed class name string wouldn't be seen by Tailwind's static content scanner and would silently fail to purge-survive.
 - **Prerequisite done alongside**: `environment.ts`'s single `apiUrl` split into `identityApiUrl`/`assetRegistryApiUrl` (flagged as a P2 prerequisite in the integration plan). `assetRegistryApiUrl` is currently a placeholder pointing at the same host as `identityApiUrl`, since `rentifyx-asset-registry-api` has no real deployment yet (M6 IaC not applied) — update it once that changes.
