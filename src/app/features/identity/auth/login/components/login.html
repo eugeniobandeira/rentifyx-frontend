@@ -37,7 +37,15 @@
       </div>
 
       <div class="flex flex-col gap-1">
-        <label for="password" class="text-sm font-medium text-text-primary">Password</label>
+        <div class="flex items-center justify-between">
+          <label for="password" class="text-sm font-medium text-text-primary">Password</label>
+          <a
+            routerLink="/forgot-password"
+            class="text-sm text-brand-default hover:underline"
+            data-testid="login-forgot-password-link"
+            >Forgot password?</a
+          >
+        </div>
         <input
           id="password"
           type="password"
